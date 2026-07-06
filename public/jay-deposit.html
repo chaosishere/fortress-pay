@@ -20,6 +20,17 @@ body{
     color:#111827;
 }
 
+body.embedded{
+    min-height:auto;
+    padding:12px;
+    background:#f8fafc;
+}
+
+body.embedded .card{
+    max-width:640px;
+    box-shadow:none;
+}
+
 .card{
     width:100%;
     max-width:520px;
@@ -404,6 +415,89 @@ const utrBtn = document.getElementById("utrBtn");
 const utrMessage = document.getElementById("utrMessage");
 let currentDepositId = null;
 
+function isEmbedded(){
+    try{
+        return window.self !== window.top || new URLSearchParams(window.location.search).get("embedded") === "1";
+    }catch(_){
+        return true;
+    }
+}
+
+function notifyFrameParent(eventName, extra){
+    if(!isEmbedded()){
+        return;
+    }
+
+    window.parent.postMessage({
+        source: "fortress-pay",
+        event: eventName,
+        path: window.location.pathname,
+        height: Math.max(document.body.scrollHeight, document.documentElement.scrollHeight),
+        ...(extra || {})
+    }, "*");
+}
+
+function redirectToReturnUrl(url){
+    if(!url){
+        return;
+    }
+
+    if(isEmbedded()){
+        notifyFrameParent("redirect", {url: url});
+
+        try{
+            window.top.location.assign(url);
+            return;
+        }catch(_){}
+    }
+
+    window.location.href = url;
+}
+
+function applyIframeMode(){
+    if(!isEmbedded()){
+        return;
+    }
+
+    document.body.classList.add("embedded");
+    notifyFrameParent("ready");
+    window.addEventListener("resize", function(){
+        notifyFrameParent("resize");
+    });
+
+    if(window.ResizeObserver){
+        new ResizeObserver(function(){
+            notifyFrameParent("resize");
+        }).observe(document.body);
+    }
+}
+
+function prefillFromQuery(){
+    const params = new URLSearchParams(window.location.search);
+    const map = {
+        username: ["username", "name", "fullName"],
+        email: ["email"],
+        mobile: ["mobile", "phone"],
+        amount: ["amount"]
+    };
+
+    Object.keys(map).forEach(function(fieldId){
+        const input = document.getElementById(fieldId);
+
+        if(!input || input.value){
+            return;
+        }
+
+        const key = map[fieldId].find(function(item){
+            return params.get(item);
+        });
+
+        if(key){
+            input.value = params.get(key);
+        }
+    });
+}
+
 function showMessage(box, type, text){
     box.className = "message " + type;
     box.textContent = text;
@@ -478,6 +572,7 @@ function renderPaymentDetails(depositId, details, fallbackAmount){
     form.classList.add("hidden");
     paymentPanel.classList.remove("hidden");
     showMessage(utrMessage, "success", "Payment details loaded. Pay the amount and submit the UTR below.");
+    notifyFrameParent("payment-details-loaded");
 }
 
 mobileInput.addEventListener("input", function(){
@@ -643,7 +738,7 @@ utrForm.addEventListener("submit", async function(e){
             utrInput.disabled = true;
             if(data.redirectUrl){
                 setTimeout(function(){
-                    window.location.href = data.redirectUrl;
+                    redirectToReturnUrl(data.redirectUrl);
                 }, 1500);
             }
             return;
@@ -660,6 +755,9 @@ utrForm.addEventListener("submit", async function(e){
         }
     }
 });
+
+prefillFromQuery();
+applyIframeMode();
 </script>
 
 </body>

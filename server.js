@@ -7,23 +7,56 @@ const paymentRoutes = require("./routes/payment.routes");
 
 const app = express();
 
+function getFrameAncestors() {
+  return (process.env.B2CORE_FRAME_ANCESTORS || "'self' https://my.fortressfx.com")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function setIframeHeaders(req, res, next) {
+  res.setHeader("Content-Security-Policy", `frame-ancestors ${getFrameAncestors()}`);
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+}
+
+function denyFrameHeaders(req, res, next) {
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+  next();
+}
+
 app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || "1mb" }));
+app.use(["/deposit.html", "/jay-deposit.html"], setIframeHeaders);
+app.use("/admin.html", denyFrameHeaders);
 app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/webhook/payout", paymentRoutes);
 app.use("/api", paymentRoutes);
 
 app.get("/deposit", (req, res) => {
+  setIframeHeaders(req, res, () => {});
   res.sendFile(path.join(__dirname, "public", "deposit.html"));
 });
 
 app.get("/jay/deposit", (req, res) => {
+  setIframeHeaders(req, res, () => {});
+  res.sendFile(path.join(__dirname, "public", "jay-deposit.html"));
+});
+
+app.get("/b2core/deposit", setIframeHeaders, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "deposit.html"));
+});
+
+app.get("/b2core/jay/deposit", setIframeHeaders, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "jay-deposit.html"));
 });
 
 app.get("/admin", (req, res) => {
+  denyFrameHeaders(req, res, () => {});
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
