@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Payment Master</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    min-height:100vh;
+    font-family:Arial, sans-serif;
+    background:#f4f7fb;
+    color:#111827;
+}
+
+button,input{
+    font:inherit;
+}
+
+.app{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns:320px 1fr;
+}
+
+.sidebar{
+    background:#ffffff;
+    border-right:1px solid #d9e0ea;
+    padding:22px;
+}
+
+.brand{
+    font-size:20px;
+    font-weight:800;
+    margin-bottom:4px;
+}
+
+.muted{
+    color:#64748b;
+    font-size:13px;
+}
+
+.panel{
+    background:#ffffff;
+    border:1px solid #d9e0ea;
+    border-radius:8px;
+    padding:16px;
+}
+
+.sidebar .panel{
+    margin-top:18px;
+}
+
+.nav{
+    display:grid;
+    gap:8px;
+    margin-top:18px;
+}
+
+.nav button{
+    width:100%;
+    justify-content:flex-start;
+    text-align:left;
+}
+
+.nav button.active{
+    background:#22a086;
+    border-color:#22a086;
+    color:#ffffff;
+}
+
+.main{
+    min-width:0;
+    padding:22px;
+}
+
+.topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:16px;
+}
+
+.view{
+    display:none;
+}
+
+.view.active{
+    display:block;
+}
+
+h1,h2{
+    margin:0;
+}
+
+h1{
+    font-size:24px;
+}
+
+h2{
+    font-size:15px;
+    margin-bottom:14px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr 1fr;
+    gap:12px;
+    margin-bottom:16px;
+}
+
+.settlement-panel{
+    margin-bottom:18px;
+}
+
+.settlement-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.settlement-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#22a086;
+}
+
+.settlement-filters{
+    display:grid;
+    grid-template-columns:repeat(8, minmax(0, auto));
+    gap:8px;
+    margin-bottom:14px;
+}
+
+.range-btn.active{
+    background:#22a086;
+    border-color:#22a086;
+    color:#ffffff;
+}
+
+.date-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 200px;
+    gap:14px;
+    align-items:end;
+    margin-bottom:12px;
+}
+
+.settlement-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 2fr;
+    gap:14px;
+}
+
+.settlement-stack{
+    display:grid;
+    gap:14px;
+}
+
+.settlement-card{
+    background:#ffffff;
+    border:1px solid #d9e0ea;
+    border-top:5px solid #22a086;
+    border-radius:8px;
+    padding:24px 18px;
+    text-align:center;
+}
+
+.settlement-card.withdraw{
+    border-top-color:#ef4444;
+}
+
+.settlement-card span{
+    display:block;
+    color:#1f2937;
+    font-size:18px;
+    font-weight:800;
+    margin-bottom:20px;
+}
+
+.settlement-card strong{
+    display:block;
+    color:#020617;
+    font-size:34px;
+}
+
+.balance-card{
+    background:#ffffff;
+    border:1px solid #d9e0ea;
+    border-top:5px solid #22a086;
+    border-radius:8px;
+    padding:28px 34px;
+}
+
+.balance-row{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    color:#1f2937;
+    font-size:18px;
+    font-weight:800;
+    line-height:1.7;
+}
+
+.balance-row.net{
+    margin-top:22px;
+    font-size:24px;
+}
+
+.filters{
+    display:grid;
+    grid-template-columns:2fr 1.5fr 1fr;
+    gap:10px;
+    margin-bottom:16px;
+}
+
+.payin-tools{
+    display:grid;
+    grid-template-columns:160px 180px minmax(220px, 1fr) 140px;
+    gap:10px;
+    margin-bottom:12px;
+}
+
+.summary-strip{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+    margin-bottom:12px;
+}
+
+.summary-pill{
+    border:1px solid #d9e0ea;
+    border-radius:8px;
+    padding:10px 12px;
+    background:#ffffff;
+    font-size:13px;
+    font-weight:800;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.summary-pill.success strong{color:#16a34a}
+.summary-pill.failed strong{color:#dc2626}
+.summary-pill.pending strong{color:#f59e0b}
+.summary-pill.incomplete strong{color:#2563eb}
+
+.subhead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:18px 0 10px;
+}
+
+.subhead h2{
+    margin:0;
+    font-size:18px;
+}
+
+.metric{
+    background:#ffffff;
+    border:1px solid #d9e0ea;
+    border-radius:8px;
+    padding:14px;
+}
+
+.metric span{
+    display:block;
+    color:#64748b;
+    font-size:12px;
+    margin-bottom:8px;
+}
+
+.metric strong{
+    display:block;
+    font-size:22px;
+}
+
+.field{
+    margin-bottom:12px;
+}
+
+label{
+    display:block;
+    color:#334155;
+    font-size:12px;
+    font-weight:700;
+    margin-bottom:6px;
+}
+
+input{
+    width:100%;
+    border:1px solid #cbd5e1;
+    border-radius:6px;
+    background:#ffffff;
+    color:#111827;
+    padding:11px 12px;
+    min-height:42px;
+}
+
+input:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+}
+
+select{
+    width:100%;
+    border:1px solid #cbd5e1;
+    border-radius:6px;
+    background:#ffffff;
+    color:#111827;
+    padding:11px 12px;
+    min-height:42px;
+    font:inherit;
+}
+
+select:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+}
+
+.row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+button{
+    border:1px solid #cbd5e1;
+    background:#ffffff;
+    color:#111827;
+    border-radius:6px;
+    padding:10px 12px;
+    min-height:40px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+button.primary{
+    width:100%;
+    background:#2563eb;
+    border-color:#2563eb;
+    color:#ffffff;
+}
+
+button.danger{
+    color:#b91c1c;
+}
+
+button:disabled{
+    cursor:not-allowed;
+    opacity:0.6;
+}
+
+.table-wrap{
+    overflow:auto;
+    background:#ffffff;
+    border:1px solid #d9e0ea;
+    border-radius:8px;
+}
+
+.pager{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:12px;
+    margin-bottom:16px;
+}
+
+.pager-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.pager select{
+    width:auto;
+    min-width:82px;
+}
+
+table{
+    width:100%;
+    min-width:920px;
+    border-collapse:collapse;
+}
+
+th,td{
+    border-bottom:1px solid #e5eaf1;
+    padding:10px 12px;
+    text-align:left;
+    font-size:13px;
+    vertical-align:middle;
+}
+
+th{
+    background:#f8fafc;
+    color:#475569;
+    font-size:12px;
+    text-transform:uppercase;
+}
+
+tr:hover td{
+    background:#f8fbff;
+}
+
+.mono{
+    font-family:Consolas, monospace;
+    font-size:12px;
+}
+
+.status{
+    display:inline-flex;
+    align-items:center;
+    min-height:24px;
+    border-radius:999px;
+    padding:4px 9px;
+    font-size:12px;
+    font-weight:800;
+    background:#e5e7eb;
+    color:#374151;
+}
+
+.status.success,.status.completed,.status.done{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.status.failed,.status.fail,.status.request_failed{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.status.initiated,.status.created,.status.pending{
+    background:#dbeafe;
+    color:#1d4ed8;
+}
+
+.message{
+    display:none;
+    margin-top:12px;
+    border-radius:6px;
+    padding:10px 12px;
+    font-size:13px;
+    line-height:1.4;
+}
+
+.message.show{
+    display:block;
+}
+
+.message.error{
+    background:#fef2f2;
+    border:1px solid #fecaca;
+    color:#991b1b;
+}
+
+.message.info{
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    color:#1e40af;
+}
+
+.details{
+    margin-top:16px;
+}
+
+pre{
+    white-space:pre-wrap;
+    word-break:break-word;
+    margin:0;
+    background:#0f172a;
+    color:#e2e8f0;
+    border-radius:8px;
+    padding:14px;
+    max-height:280px;
+    overflow:auto;
+    font-size:12px;
+}
+
+.empty{
+    padding:28px;
+    text-align:center;
+    color:#64748b;
+}
+
+@media(max-width:900px){
+    .app{
+        grid-template-columns:1fr;
+    }
+
+    .sidebar{
+        border-right:none;
+        border-bottom:1px solid #d9e0ea;
+    }
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .filters{
+        grid-template-columns:1fr;
+    }
+
+    .settlement-filters,
+    .date-row,
+    .settlement-grid,
+    .payin-tools,
+    .summary-strip{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">Payment Master</div>
+        <div class="muted">Payout operations</div>
+
+        <div class="panel">
+            <h2>Admin Access</h2>
+            <div class="field">
+                <label for="adminKey">Admin Key</label>
+                <input id="adminKey" type="password" autocomplete="current-password" />
+            </div>
+            <div class="actions">
+                <button id="saveKeyBtn" type="button">Save Key</button>
+                <button id="clearKeyBtn" class="danger" type="button">Clear</button>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <button class="active" type="button" data-view-target="payinView">Partner Payin Report</button>
+            <button type="button" data-view-target="payoutView">Partner Payout Report</button>
+            <button type="button" data-view-target="settlementView">Settlement Dashboard</button>
+        </nav>
+
+        <form id="payoutForm" class="panel" novalidate>
+            <h2>New Payout</h2>
+            <div class="field">
+                <label for="name">Beneficiary Name</label>
+                <input id="name" name="name" required />
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" required />
+            </div>
+            <div class="field">
+                <label for="accountNumber">Account Number</label>
+                <input id="accountNumber" name="accountNumber" inputmode="numeric" required />
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="ifsc">IFSC</label>
+                    <input id="ifsc" name="ifsc" required />
+                </div>
+                <div class="field">
+                    <label for="amount">Amount</label>
+                    <input id="amount" name="amount" type="number" min="1" step="0.01" required />
+                </div>
+            </div>
+            <div class="field">
+                <label for="bankName">Bank Name</label>
+                <input id="bankName" name="bankName" value="State Bank Of India" required />
+            </div>
+            <button id="createPayoutBtn" class="primary" type="submit">Create Payout</button>
+            <div id="formMessage" class="message"></div>
+        </form>
+    </aside>
+
+    <main class="main">
+        <section id="settlementView" class="view settlement-panel">
+            <div class="settlement-head">
+                <span class="settlement-dot"></span>
+                <h1>Partner Settlement Dashboard</h1>
+            </div>
+
+            <div class="panel">
+                <div class="settlement-filters">
+                    <button class="range-btn" type="button" data-range="1h">1h</button>
+                    <button class="range-btn" type="button" data-range="24h">24h</button>
+                    <button class="range-btn" type="button" data-range="7d">7Days</button>
+                    <button class="range-btn" type="button" data-range="30d">30Days</button>
+                    <button class="range-btn active" type="button" data-range="today">Today</button>
+                    <button class="range-btn" type="button" data-range="yesterday">Yesterday</button>
+                    <button class="range-btn" type="button" data-range="month">This Month</button>
+                    <button class="range-btn" type="button" data-range="prevMonth">Previous Month</button>
+                </div>
+
+                <div class="date-row">
+                    <div class="field">
+                        <label for="ledgerStartDate">Start Date (IST)</label>
+                        <input id="ledgerStartDate" type="datetime-local" />
+                    </div>
+                    <div class="field">
+                        <label for="ledgerEndDate">End Date (IST)</label>
+                        <input id="ledgerEndDate" type="datetime-local" />
+                    </div>
+                    <button id="ledgerSearchBtn" class="primary" type="button">Search</button>
+                </div>
+            </div>
+
+            <div class="settlement-grid">
+                <div class="settlement-stack">
+                    <div class="settlement-card">
+                        <span id="ledgerDepositTitle">Deposit(0)</span>
+                        <strong id="ledgerDepositAmount">₹0.00</strong>
+                    </div>
+                    <div class="settlement-card withdraw">
+                        <span id="ledgerWithdrawTitle">Withdraw(0)</span>
+                        <strong id="ledgerWithdrawAmount">₹0.00</strong>
+                    </div>
+                </div>
+                <div class="settlement-stack">
+                    <div class="settlement-card">
+                        <span id="ledgerDepositRate">Deposit(6%)</span>
+                        <strong id="ledgerDepositCommission">₹0.00</strong>
+                    </div>
+                    <div class="settlement-card withdraw">
+                        <span id="ledgerWithdrawRate">Withdraw(2.5%)</span>
+                        <strong id="ledgerWithdrawCommission">₹0.00</strong>
+                    </div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-row"><span>Deposit</span><strong id="summaryDeposit">₹0.00</strong></div>
+                    <div class="balance-row"><span>Withdraw</span><strong id="summaryWithdraw">₹0.00</strong></div>
+                    <div class="balance-row"><span>Commission</span><strong id="summaryCommission">₹0.00</strong></div>
+                    <div class="balance-row"><span>Settlement</span><strong id="summarySettlement">₹0.00</strong></div>
+                    <div class="balance-row"><span>Chargeback</span><strong id="summaryChargeback">₹0.00</strong></div>
+                    <div class="balance-row net"><span>Net Balance</span><strong id="summaryNetBalance">₹0.00</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="payinView" class="view active">
+        <div class="topbar">
+            <div>
+                <h1>Partner Payin (Admin)</h1>
+                <div class="muted">Payin records by updated time using the selected IST range</div>
+            </div>
+            <div class="actions">
+                <button id="payinReloadBtn" type="button">Reload Payins</button>
+                <button id="payinExportBtn" type="button">Export CSV</button>
+            </div>
+        </div>
+
+        <section class="summary-strip">
+            <div class="summary-pill success"><span>Total Success Amount</span><strong id="payinSuccessAmount">₹0.00</strong></div>
+            <div class="summary-pill failed"><span>Total Failed Amount</span><strong id="payinFailedAmount">₹0.00</strong></div>
+            <div class="summary-pill pending"><span>Total Pending Amount</span><strong id="payinPendingAmount">₹0.00</strong></div>
+            <div class="summary-pill incomplete"><span>Total Incomplete Amount</span><strong id="payinIncompleteAmount">₹0.00</strong></div>
+        </section>
+
+        <section class="payin-tools">
+            <div class="field">
+                <label for="payinLimit">Display Records</label>
+                <select id="payinLimit">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="payinStatusFilter">Payment Status</label>
+                <select id="payinStatusFilter">
+                    <option value="">All</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="INCOMPLETE">Incomplete</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="payinSearch">Search</label>
+                <input id="payinSearch" type="search" placeholder="Transaction, UTR, email, mobile, name" />
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button id="payinSearchBtn" class="primary" type="button">Search</button>
+            </div>
+        </section>
+
+        <section class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sr</th>
+                        <th>Status</th>
+                        <th>Payin ID</th>
+                        <th>Client Details</th>
+                        <th>Amount</th>
+                        <th>Transaction Details</th>
+                        <th>Payment Details</th>
+                        <th>Updated</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="payinRows"></tbody>
+            </table>
+            <div id="payinEmptyState" class="empty">No payins found.</div>
+        </section>
+
+        <section class="pager">
+            <div class="muted" id="payinPageInfo">Page 1 of 1</div>
+            <div class="pager-controls">
+                <button id="payinPrevPageBtn" type="button">Previous</button>
+                <button id="payinNextPageBtn" type="button">Next</button>
+            </div>
+        </section>
+
+        </section>
+
+        <section id="payoutView" class="view">
+        <div class="topbar">
+            <div>
+                <h1>Partner Payout (Admin)</h1>
+                <div class="muted">Payout records by updated time using the selected IST range</div>
+            </div>
+            <div class="actions">
+                <button id="reloadBtn" type="button">Reload Payouts</button>
+                <button id="refreshAllBtn" type="button">Refresh Pending</button>
+                <button id="payoutExportBtn" type="button">Export CSV</button>
+            </div>
+        </div>
+
+        <section class="summary-strip">
+            <div class="summary-pill success"><span>Total Success Amount</span><strong id="payoutSuccessAmount">₹0.00</strong></div>
+            <div class="summary-pill failed"><span>Total Failed Amount</span><strong id="payoutFailedAmount">₹0.00</strong></div>
+            <div class="summary-pill pending"><span>Total Pending Amount</span><strong id="payoutPendingAmount">₹0.00</strong></div>
+            <div class="summary-pill incomplete"><span>Total Incomplete Amount</span><strong id="payoutIncompleteAmount">₹0.00</strong></div>
+        </section>
+
+        <section class="payin-tools">
+            <div class="field">
+                <label for="pageLimit">Display Records</label>
+                <select id="pageLimit">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="statusFilter">Payment Status</label>
+                <select id="statusFilter">
+                    <option value="">All</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="INCOMPLETE">Incomplete</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="payoutSearch">Search</label>
+                <input id="payoutSearch" type="search" placeholder="Transaction, UTR, email, phone, name" />
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button id="payoutSearchBtn" class="primary" type="button">Search</button>
+            </div>
+        </section>
+
+        <section class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sr</th>
+                        <th>Status</th>
+                        <th>Payout ID</th>
+                        <th>Client Details</th>
+                        <th>Amount</th>
+                        <th>Transaction Details</th>
+                        <th>Bank Details</th>
+                        <th>Updated</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="payoutRows"></tbody>
+            </table>
+            <div id="emptyState" class="empty">No payouts found.</div>
+        </section>
+
+        <section class="pager">
+            <div class="muted" id="pageInfo">Page 1 of 1</div>
+            <div class="pager-controls">
+                <button id="prevPageBtn" type="button">Previous</button>
+                <button id="nextPageBtn" type="button">Next</button>
+            </div>
+        </section>
+
+        <section class="details">
+            <pre id="detailsBox">Select a payout to inspect PSP responses.</pre>
+        </section>
+        </section>
+    </main>
+</div>
+
+<script>
+const adminKeyInput = document.getElementById("adminKey");
+const saveKeyBtn = document.getElementById("saveKeyBtn");
+const clearKeyBtn = document.getElementById("clearKeyBtn");
+const payoutForm = document.getElementById("payoutForm");
+const createPayoutBtn = document.getElementById("createPayoutBtn");
+const ifscInput = document.getElementById("ifsc");
+const reloadBtn = document.getElementById("reloadBtn");
+const refreshAllBtn = document.getElementById("refreshAllBtn");
+const payoutRows = document.getElementById("payoutRows");
+const emptyState = document.getElementById("emptyState");
+const formMessage = document.getElementById("formMessage");
+const detailsBox = document.getElementById("detailsBox");
+const payoutSearch = document.getElementById("payoutSearch");
+const payoutSearchBtn = document.getElementById("payoutSearchBtn");
+const statusFilter = document.getElementById("statusFilter");
+const pageInfo = document.getElementById("pageInfo");
+const pageLimit = document.getElementById("pageLimit");
+const prevPageBtn = document.getElementById("prevPageBtn");
+const nextPageBtn = document.getElementById("nextPageBtn");
+const payoutExportBtn = document.getElementById("payoutExportBtn");
+const payoutSuccessAmount = document.getElementById("payoutSuccessAmount");
+const payoutFailedAmount = document.getElementById("payoutFailedAmount");
+const payoutPendingAmount = document.getElementById("payoutPendingAmount");
+const payoutIncompleteAmount = document.getElementById("payoutIncompleteAmount");
+const ledgerStartDate = document.getElementById("ledgerStartDate");
+const ledgerEndDate = document.getElementById("ledgerEndDate");
+const ledgerSearchBtn = document.getElementById("ledgerSearchBtn");
+const ledgerDepositTitle = document.getElementById("ledgerDepositTitle");
+const ledgerDepositAmount = document.getElementById("ledgerDepositAmount");
+const ledgerWithdrawTitle = document.getElementById("ledgerWithdrawTitle");
+const ledgerWithdrawAmount = document.getElementById("ledgerWithdrawAmount");
+const ledgerDepositRate = document.getElementById("ledgerDepositRate");
+const ledgerDepositCommission = document.getElementById("ledgerDepositCommission");
+const ledgerWithdrawRate = document.getElementById("ledgerWithdrawRate");
+const ledgerWithdrawCommission = document.getElementById("ledgerWithdrawCommission");
+const summaryDeposit = document.getElementById("summaryDeposit");
+const summaryWithdraw = document.getElementById("summaryWithdraw");
+const summaryCommission = document.getElementById("summaryCommission");
+const summarySettlement = document.getElementById("summarySettlement");
+const summaryChargeback = document.getElementById("summaryChargeback");
+const summaryNetBalance = document.getElementById("summaryNetBalance");
+const payinRows = document.getElementById("payinRows");
+const payinEmptyState = document.getElementById("payinEmptyState");
+const payinLimit = document.getElementById("payinLimit");
+const payinStatusFilter = document.getElementById("payinStatusFilter");
+const payinSearch = document.getElementById("payinSearch");
+const payinSearchBtn = document.getElementById("payinSearchBtn");
+const payinReloadBtn = document.getElementById("payinReloadBtn");
+const payinExportBtn = document.getElementById("payinExportBtn");
+const payinPageInfo = document.getElementById("payinPageInfo");
+const payinPrevPageBtn = document.getElementById("payinPrevPageBtn");
+const payinNextPageBtn = document.getElementById("payinNextPageBtn");
+const payinSuccessAmount = document.getElementById("payinSuccessAmount");
+const payinFailedAmount = document.getElementById("payinFailedAmount");
+const payinPendingAmount = document.getElementById("payinPendingAmount");
+const payinIncompleteAmount = document.getElementById("payinIncompleteAmount");
+const navButtons = document.querySelectorAll("[data-view-target]");
+const views = document.querySelectorAll(".view");
+
+let payouts = [];
+let payins = [];
+let filterTimer = null;
+let payinFilterTimer = null;
+let currentPage = 1;
+let payinCurrentPage = 1;
+let pagination = {
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1
+};
+let payinPagination = {
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1
+};
+let payinSummary = {
+    totalRecords: 0,
+    successAmount: 0,
+    failedAmount: 0,
+    pendingAmount: 0,
+    incompleteAmount: 0
+};
+let payoutSummary = {
+    totalRecords: 0,
+    successAmount: 0,
+    failedAmount: 0,
+    pendingAmount: 0,
+    incompleteAmount: 0
+};
+
+adminKeyInput.value = localStorage.getItem("paymentMasterAdminKey") || "";
+
+function showView(viewId){
+    navButtons.forEach(function(button){
+        button.classList.toggle("active", button.dataset.viewTarget === viewId);
+    });
+
+    views.forEach(function(view){
+        view.classList.toggle("active", view.id === viewId);
+    });
+
+    if(viewId === "payinView"){
+        detailsBox.textContent = "Select a payin to inspect PSP responses.";
+    }else if(viewId === "payoutView"){
+        detailsBox.textContent = "Select a payout to inspect PSP responses.";
+    }
+}
+
+navButtons.forEach(function(button){
+    button.addEventListener("click", function(){
+        showView(button.dataset.viewTarget);
+    });
+});
+
+ifscInput.addEventListener("input", function(){
+    this.value = this.value.toUpperCase();
+});
+
+const IST_OFFSET_MINUTES = 330;
+
+function getIstDate(date){
+    return new Date(date.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+}
+
+function fromIstParts(year, month, date, hours, minutes, seconds, milliseconds){
+    return new Date(Date.UTC(year, month, date, hours, minutes, seconds || 0, milliseconds || 0));
+}
+
+function toIstDateTimeInput(date){
+    const pad = function(value){ return String(value).padStart(2, "0"); };
+
+    return [
+        date.getUTCFullYear(),
+        "-",
+        pad(date.getUTCMonth() + 1),
+        "-",
+        pad(date.getUTCDate()),
+        "T",
+        pad(date.getUTCHours()),
+        ":",
+        pad(date.getUTCMinutes())
+    ].join("");
+}
+
+function setActiveRange(range){
+    document.querySelectorAll(".range-btn").forEach(function(button){
+        button.classList.toggle("active", button.dataset.range === range);
+    });
+}
+
+function setLedgerRange(range){
+    const nowIst = getIstDate(new Date());
+    const year = nowIst.getUTCFullYear();
+    const month = nowIst.getUTCMonth();
+    const day = nowIst.getUTCDate();
+    let start = fromIstParts(year, month, day, 0, 0, 0, 0);
+    let end = fromIstParts(year, month, day, 23, 59, 59, 999);
+
+    if(range === "1h"){
+        start = new Date(nowIst.getTime() - 60 * 60 * 1000);
+        end = nowIst;
+    }else if(range === "24h"){
+        start = new Date(nowIst.getTime() - 24 * 60 * 60 * 1000);
+        end = nowIst;
+    }else if(range === "7d"){
+        start = fromIstParts(year, month, day - 7, 0, 0, 0, 0);
+    }else if(range === "30d"){
+        start = fromIstParts(year, month, day - 30, 0, 0, 0, 0);
+    }else if(range === "yesterday"){
+        start = fromIstParts(year, month, day - 1, 0, 0, 0, 0);
+        end = fromIstParts(year, month, day - 1, 23, 59, 59, 999);
+    }else if(range === "month"){
+        start = fromIstParts(year, month, 1, 0, 0, 0, 0);
+    }else if(range === "prevMonth"){
+        start = fromIstParts(year, month - 1, 1, 0, 0, 0, 0);
+        end = fromIstParts(year, month, 1, 0, 0, 0, 0);
+        end = new Date(end.getTime() - 1);
+    }
+
+    ledgerStartDate.value = toIstDateTimeInput(start);
+    ledgerEndDate.value = toIstDateTimeInput(end);
+    setActiveRange(range);
+}
+
+function getAdminKey(){
+    return adminKeyInput.value.trim();
+}
+
+function schedulePayoutLoad(){
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(function(){
+        currentPage = 1;
+        loadPayouts().catch(function(error){
+            showMessage("error", error.message);
+        });
+    }, 300);
+}
+
+[payoutSearch, statusFilter, pageLimit].forEach(function(input){
+    input.addEventListener("input", schedulePayoutLoad);
+    input.addEventListener("change", schedulePayoutLoad);
+});
+
+function schedulePayinLoad(){
+    clearTimeout(payinFilterTimer);
+    payinFilterTimer = setTimeout(function(){
+        payinCurrentPage = 1;
+        loadPayins().catch(function(error){
+            showMessage("error", error.message);
+        });
+    }, 300);
+}
+
+[payinSearch, payinStatusFilter, payinLimit].forEach(function(input){
+    input.addEventListener("input", schedulePayinLoad);
+    input.addEventListener("change", schedulePayinLoad);
+});
+
+function showMessage(type, text){
+    formMessage.className = "message show " + type;
+    formMessage.textContent = text;
+}
+
+function clearMessage(){
+    formMessage.className = "message";
+    formMessage.textContent = "";
+}
+
+async function apiFetch(url, options){
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            "x-admin-key": getAdminKey(),
+            ...(options && options.headers ? options.headers : {})
+        }
+    });
+
+    let data = {};
+
+    try{
+        data = await response.json();
+    }catch(_){
+        data = {};
+    }
+
+    if(!response.ok){
+        const message = data.error || "Request failed";
+        const error = new Error(message);
+        error.data = data;
+        throw error;
+    }
+
+    return data;
+}
+
+function formatDate(value){
+    if(!value){
+        return "-";
+    }
+
+    return new Date(value).toLocaleString();
+}
+
+function formatMoney(value){
+    return "₹" + Number(value || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function formatRate(rate){
+    const percent = Number(rate || 0) * 100;
+    return Number.isInteger(percent) ? String(percent) : percent.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function statusClass(status){
+    return String(status || "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+
+function renderReconciliation(report){
+    const deposit = report.deposit || {};
+    const withdraw = report.withdraw || {};
+
+    ledgerDepositTitle.textContent = "Deposit(" + Number(deposit.count || 0) + ")";
+    ledgerWithdrawTitle.textContent = "Withdraw(" + Number(withdraw.count || 0) + ")";
+    ledgerDepositRate.textContent = "Deposit(" + formatRate(report.rates && report.rates.deposit) + "%)";
+    ledgerWithdrawRate.textContent = "Withdraw(" + formatRate(report.rates && report.rates.withdraw) + "%)";
+    ledgerDepositAmount.textContent = formatMoney(deposit.amount);
+    ledgerWithdrawAmount.textContent = formatMoney(withdraw.amount);
+    ledgerDepositCommission.textContent = formatMoney(deposit.commission);
+    ledgerWithdrawCommission.textContent = formatMoney(withdraw.commission);
+    summaryDeposit.textContent = formatMoney(deposit.amount);
+    summaryWithdraw.textContent = formatMoney(withdraw.amount);
+    summaryCommission.textContent = formatMoney(report.totalCommission);
+    summarySettlement.textContent = formatMoney(report.settlement);
+    summaryChargeback.textContent = formatMoney(report.chargeback);
+    summaryNetBalance.textContent = formatMoney(report.netBalance);
+}
+
+function renderPayinSummary(summary){
+    payinSuccessAmount.textContent = formatMoney(summary.successAmount);
+    payinFailedAmount.textContent = formatMoney(summary.failedAmount);
+    payinPendingAmount.textContent = formatMoney(summary.pendingAmount);
+    payinIncompleteAmount.textContent = formatMoney(summary.incompleteAmount);
+}
+
+function renderPayoutSummary(summary){
+    payoutSuccessAmount.textContent = formatMoney(summary.successAmount);
+    payoutFailedAmount.textContent = formatMoney(summary.failedAmount);
+    payoutPendingAmount.textContent = formatMoney(summary.pendingAmount);
+    payoutIncompleteAmount.textContent = formatMoney(summary.incompleteAmount);
+}
+
+function getPayinStatusLabel(payin){
+    const category = payin.statusCategory || statusClass(payin.status);
+
+    if(category === "success"){
+        return "Success";
+    }
+
+    if(category === "failed"){
+        return "Failed";
+    }
+
+    if(category === "pending"){
+        return "Pending";
+    }
+
+    return "Incomplete";
+}
+
+function getPayoutStatusLabel(payout){
+    const category = payout.statusCategory || statusClass(payout.status);
+
+    if(category === "success"){
+        return "Success";
+    }
+
+    if(category === "failed"){
+        return "Failed";
+    }
+
+    if(category === "pending"){
+        return "Pending";
+    }
+
+    return "Incomplete";
+}
+
+function renderPayinRows(){
+    payinRows.innerHTML = "";
+    payinEmptyState.style.display = payins.length ? "none" : "block";
+
+    payins.forEach(function(payin, index){
+        const sr = ((payinPagination.page - 1) * payinPagination.limit) + index + 1;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${sr}</td>
+            <td><span class="status ${statusClass(payin.statusCategory || payin.status)}">${getPayinStatusLabel(payin)}</span></td>
+            <td class="mono">${payin.id}</td>
+            <td>
+                <strong>Username:</strong> ${payin.username || "-"}<br>
+                <strong>Mobile Number:</strong> ${payin.mobile || "-"}<br>
+                <strong>Email:</strong> ${payin.email || "-"}
+            </td>
+            <td>${formatMoney(payin.amount)}</td>
+            <td>
+                <strong>TransactionId:</strong> <span class="mono">${payin.id}</span><br>
+                <strong>OrderId:</strong> ${payin.orderId || "-"}<br>
+                <strong>UTR Number:</strong> ${payin.utr || "-"}
+            </td>
+            <td>
+                <strong>Name:</strong> Payin<br>
+                <strong>Method:</strong> ManualPayment<br>
+                <strong>Bank:</strong> ${payin.bankName || "-"}
+            </td>
+            <td>
+                <strong>Created:</strong> ${formatDate(payin.createdAt)}<br>
+                <strong>Updated:</strong> ${formatDate(payin.updatedAt)}
+            </td>
+            <td><button type="button" data-view-payin="${payin.id}">View</button></td>
+        `;
+        payinRows.appendChild(tr);
+    });
+
+    renderPayinSummary(payinSummary);
+    renderPayinPagination();
+}
+
+function renderPayinPagination(){
+    payinPageInfo.textContent = "Page " + payinPagination.page + " of " + payinPagination.totalPages + " (" + payinPagination.total + " records)";
+    payinPrevPageBtn.disabled = payinPagination.page <= 1;
+    payinNextPageBtn.disabled = payinPagination.page >= payinPagination.totalPages;
+}
+
+async function loadReconciliation(){
+    const params = new URLSearchParams();
+
+    if(ledgerStartDate.value){
+        params.set("startDate", ledgerStartDate.value);
+    }
+
+    if(ledgerEndDate.value){
+        params.set("endDate", ledgerEndDate.value);
+    }
+
+    const data = await apiFetch("/api/admin/reconciliation?" + params.toString());
+    renderReconciliation(data);
+}
+
+function getDateRangeParams(){
+    const params = new URLSearchParams();
+
+    if(ledgerStartDate.value){
+        params.set("startDate", ledgerStartDate.value);
+    }
+
+    if(ledgerEndDate.value){
+        params.set("endDate", ledgerEndDate.value);
+    }
+
+    return params;
+}
+
+async function loadPayins(){
+    const params = getDateRangeParams();
+    params.set("page", String(payinCurrentPage));
+    params.set("limit", payinLimit.value);
+
+    if(payinSearch.value.trim()){
+        params.set("search", payinSearch.value.trim());
+    }
+
+    if(payinStatusFilter.value.trim()){
+        params.set("status", payinStatusFilter.value.trim());
+    }
+
+    const data = await apiFetch("/api/admin/payins?" + params.toString());
+    payins = data.payins || [];
+    payinSummary = data.summary || payinSummary;
+    payinPagination = data.pagination || payinPagination;
+    payinCurrentPage = payinPagination.page;
+    renderPayinRows();
+}
+
+async function fetchAllPayinsForExport(){
+    const firstParams = getDateRangeParams();
+    firstParams.set("page", "1");
+    firstParams.set("limit", "100");
+
+    if(payinSearch.value.trim()){
+        firstParams.set("search", payinSearch.value.trim());
+    }
+
+    if(payinStatusFilter.value.trim()){
+        firstParams.set("status", payinStatusFilter.value.trim());
+    }
+
+    const firstPage = await apiFetch("/api/admin/payins?" + firstParams.toString());
+    const rows = firstPage.payins || [];
+    const totalPages = Number(firstPage.pagination && firstPage.pagination.totalPages || 1);
+
+    for(let page = 2; page <= totalPages; page += 1){
+        const params = new URLSearchParams(firstParams);
+        params.set("page", String(page));
+        const data = await apiFetch("/api/admin/payins?" + params.toString());
+        rows.push(...(data.payins || []));
+    }
+
+    return rows;
+}
+
+function showPayinDetails(payin){
+    detailsBox.textContent = JSON.stringify({
+        transactionID: payin.id,
+        status: payin.status,
+        statusCategory: payin.statusCategory,
+        amountInr: payin.amount,
+        username: payin.username,
+        email: payin.email,
+        mobile: payin.mobile,
+        utr: payin.utr,
+        orderId: payin.orderId,
+        bankName: payin.bankName,
+        accountHolder: payin.accountHolder,
+        accountNumber: payin.accountNumber,
+        ifsc: payin.ifsc,
+        manualMessage: payin.manualMessage,
+        errorMessage: payin.errorMessage,
+        paymentDetails: payin.paymentDetails,
+        manualDepositResponse: payin.manualDepositResponse
+    }, null, 2);
+}
+
+function csvCell(value){
+    return '"' + String(value === null || typeof value === "undefined" ? "" : value).replace(/"/g, '""') + '"';
+}
+
+async function exportPayinsCsv(){
+    payinExportBtn.disabled = true;
+    payinExportBtn.textContent = "Exporting...";
+
+    try{
+        const exportRows = await fetchAllPayinsForExport();
+        const header = ["Status", "Payin ID", "Username", "Mobile", "Email", "Amount", "UTR", "Order ID", "Bank", "Updated"];
+        const rows = exportRows.map(function(payin){
+            return [
+                getPayinStatusLabel(payin),
+                payin.id,
+                payin.username,
+                payin.mobile,
+                payin.email,
+                payin.amount,
+                payin.utr,
+                payin.orderId,
+                payin.bankName,
+                formatDate(payin.updatedAt)
+            ];
+        });
+        const csv = [header].concat(rows).map(function(row){
+            return row.map(csvCell).join(",");
+        }).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "payin-report.csv";
+        link.click();
+        URL.revokeObjectURL(url);
+    }catch(error){
+        showMessage("error", error.message);
+    }finally{
+        payinExportBtn.disabled = false;
+        payinExportBtn.textContent = "Export CSV";
+    }
+}
+
+function downloadCsv(filename, header, rows){
+    const csv = [header].concat(rows).map(function(row){
+        return row.map(csvCell).join(",");
+    }).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+async function fetchAllPayoutsForExport(){
+    const firstParams = getDateRangeParams();
+    firstParams.set("page", "1");
+    firstParams.set("limit", "100");
+
+    if(payoutSearch.value.trim()){
+        firstParams.set("search", payoutSearch.value.trim());
+    }
+
+    if(statusFilter.value.trim()){
+        firstParams.set("status", statusFilter.value.trim());
+    }
+
+    const firstPage = await apiFetch("/api/admin/payouts?" + firstParams.toString());
+    const rows = firstPage.payouts || [];
+    const totalPages = Number(firstPage.pagination && firstPage.pagination.totalPages || 1);
+
+    for(let page = 2; page <= totalPages; page += 1){
+        const params = new URLSearchParams(firstParams);
+        params.set("page", String(page));
+        const data = await apiFetch("/api/admin/payouts?" + params.toString());
+        rows.push(...(data.payouts || []));
+    }
+
+    return rows;
+}
+
+async function exportPayoutsCsv(){
+    payoutExportBtn.disabled = true;
+    payoutExportBtn.textContent = "Exporting...";
+
+    try{
+        const exportRows = await fetchAllPayoutsForExport();
+        downloadCsv(
+            "payout-report.csv",
+            ["Status", "Payout ID", "Name", "Phone", "Email", "Account Number", "IFSC", "Bank", "Amount", "UTR", "Order ID", "Updated"],
+            exportRows.map(function(payout){
+                return [
+                    getPayoutStatusLabel(payout),
+                    payout.id,
+                    payout.name,
+                    payout.phone,
+                    payout.email,
+                    payout.accountNumber,
+                    payout.ifsc,
+                    payout.bankName,
+                    payout.amount,
+                    payout.utr,
+                    payout.orderId,
+                    formatDate(payout.updatedAt)
+                ];
+            })
+        );
+    }catch(error){
+        showMessage("error", error.message);
+    }finally{
+        payoutExportBtn.disabled = false;
+        payoutExportBtn.textContent = "Export CSV";
+    }
+}
+
+function renderRows(){
+    payoutRows.innerHTML = "";
+    emptyState.style.display = payouts.length ? "none" : "block";
+
+    payouts.forEach(function(payout, index){
+        const sr = ((pagination.page - 1) * pagination.limit) + index + 1;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${sr}</td>
+            <td><span class="status ${statusClass(payout.statusCategory || payout.status)}">${getPayoutStatusLabel(payout)}</span></td>
+            <td class="mono">${payout.id}</td>
+            <td>
+                <strong>Username:</strong> ${payout.name || "-"}<br>
+                <strong>Mobile Number:</strong> ${payout.phone || "-"}<br>
+                <strong>Email:</strong> ${payout.email || "-"}
+            </td>
+            <td>${formatMoney(payout.amount)}</td>
+            <td>
+                <strong>TransactionId:</strong> <span class="mono">${payout.id}</span><br>
+                <strong>OrderId:</strong> ${payout.orderId || "-"}<br>
+                <strong>UTR Number:</strong> ${payout.utr || "-"}
+            </td>
+            <td>
+                <strong>Bank:</strong> ${payout.bankName || "-"}<br>
+                <strong>Account:</strong> ${payout.accountNumber || "-"}<br>
+                <strong>IFSC:</strong> ${payout.ifsc || "-"}
+            </td>
+            <td>
+                <strong>Created:</strong> ${formatDate(payout.createdAt)}<br>
+                <strong>Updated:</strong> ${formatDate(payout.updatedAt)}
+            </td>
+            <td class="actions">
+                <button type="button" data-view="${payout.id}">View</button>
+                <button type="button" data-refresh="${payout.id}">Refresh</button>
+            </td>
+        `;
+        payoutRows.appendChild(tr);
+    });
+
+    renderPayoutSummary(payoutSummary);
+    renderPagination();
+}
+
+function showDetails(payout){
+    detailsBox.textContent = JSON.stringify({
+        transactionID: payout.id,
+        status: payout.status,
+        amountInr: payout.amount,
+        amountPaisa: payout.amountPaisa,
+        email: payout.email,
+        phone: payout.phone,
+        utr: payout.utr,
+        orderId: payout.orderId,
+        message: payout.message,
+        code: payout.code,
+        errorMessage: payout.errorMessage,
+        pspResponse: payout.pspResponse,
+        statusResponse: payout.statusResponse
+    }, null, 2);
+}
+
+function renderPagination(){
+    pageInfo.textContent = "Page " + pagination.page + " of " + pagination.totalPages + " (" + pagination.total + " records)";
+    prevPageBtn.disabled = pagination.page <= 1;
+    nextPageBtn.disabled = pagination.page >= pagination.totalPages;
+}
+
+async function loadPayouts(){
+    const params = getDateRangeParams();
+    params.set("page", String(currentPage));
+    params.set("limit", pageLimit.value);
+
+    if(payoutSearch.value.trim()){
+        params.set("search", payoutSearch.value.trim());
+    }
+
+    if(statusFilter.value.trim()){
+        params.set("status", statusFilter.value.trim());
+    }
+
+    const data = await apiFetch("/api/admin/payouts?" + params.toString());
+    payouts = data.payouts || [];
+    payoutSummary = data.summary || payoutSummary;
+    pagination = data.pagination || pagination;
+    currentPage = pagination.page;
+    renderRows();
+}
+
+async function refreshPayout(id){
+    const data = await apiFetch(`/api/admin/payouts/${id}/refresh`, {
+        method: "POST",
+        body: "{}"
+    });
+
+    const index = payouts.findIndex(function(payout){
+        return payout.id === id;
+    });
+
+    if(index >= 0){
+        payouts[index] = data.payout;
+    }
+
+    renderRows();
+    showDetails(data.payout);
+}
+
+saveKeyBtn.addEventListener("click", function(){
+    localStorage.setItem("paymentMasterAdminKey", getAdminKey());
+    showMessage("info", "Admin key saved in this browser.");
+    Promise.all([loadReconciliation(), loadPayins(), loadPayouts()]).catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+clearKeyBtn.addEventListener("click", function(){
+    localStorage.removeItem("paymentMasterAdminKey");
+    adminKeyInput.value = "";
+    payouts = [];
+    payins = [];
+    currentPage = 1;
+    payinCurrentPage = 1;
+    pagination = {
+        page: 1,
+        limit: Number(pageLimit.value),
+        total: 0,
+        totalPages: 1
+    };
+    payinPagination = {
+        page: 1,
+        limit: Number(payinLimit.value),
+        total: 0,
+        totalPages: 1
+    };
+    payinSummary = {
+        totalRecords: 0,
+        successAmount: 0,
+        failedAmount: 0,
+        pendingAmount: 0,
+        incompleteAmount: 0
+    };
+    payoutSummary = {
+        totalRecords: 0,
+        successAmount: 0,
+        failedAmount: 0,
+        pendingAmount: 0,
+        incompleteAmount: 0
+    };
+    renderRows();
+    renderPayinRows();
+    clearMessage();
+});
+
+reloadBtn.addEventListener("click", function(){
+    currentPage = 1;
+    loadPayouts().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+document.querySelectorAll(".range-btn").forEach(function(button){
+    button.addEventListener("click", function(){
+        setLedgerRange(button.dataset.range);
+        currentPage = 1;
+        payinCurrentPage = 1;
+        Promise.all([loadReconciliation(), loadPayins(), loadPayouts()]).catch(function(error){
+            showMessage("error", error.message);
+        });
+    });
+});
+
+ledgerSearchBtn.addEventListener("click", function(){
+    setActiveRange("");
+    currentPage = 1;
+    payinCurrentPage = 1;
+    Promise.all([loadReconciliation(), loadPayins(), loadPayouts()]).catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+payinSearchBtn.addEventListener("click", function(){
+    payinCurrentPage = 1;
+    loadPayins().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+payinReloadBtn.addEventListener("click", function(){
+    payinCurrentPage = 1;
+    loadPayins().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+payinExportBtn.addEventListener("click", exportPayinsCsv);
+payoutSearchBtn.addEventListener("click", function(){
+    currentPage = 1;
+    loadPayouts().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+payoutExportBtn.addEventListener("click", exportPayoutsCsv);
+
+payinPrevPageBtn.addEventListener("click", function(){
+    if(payinCurrentPage <= 1){
+        return;
+    }
+
+    payinCurrentPage -= 1;
+    loadPayins().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+payinNextPageBtn.addEventListener("click", function(){
+    if(payinCurrentPage >= payinPagination.totalPages){
+        return;
+    }
+
+    payinCurrentPage += 1;
+    loadPayins().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+prevPageBtn.addEventListener("click", function(){
+    if(currentPage <= 1){
+        return;
+    }
+
+    currentPage -= 1;
+    loadPayouts().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+nextPageBtn.addEventListener("click", function(){
+    if(currentPage >= pagination.totalPages){
+        return;
+    }
+
+    currentPage += 1;
+    loadPayouts().catch(function(error){
+        showMessage("error", error.message);
+    });
+});
+
+refreshAllBtn.addEventListener("click", async function(){
+    refreshAllBtn.disabled = true;
+    try{
+        const data = await apiFetch("/api/admin/payouts/refresh-pending", {
+            method: "POST",
+            body: "{}"
+        });
+
+        const updated = data.payouts || [];
+        updated.forEach(function(item){
+            const index = payouts.findIndex(function(payout){
+                return payout.id === item.id;
+            });
+
+            if(index >= 0){
+                payouts[index] = item;
+            }
+        });
+
+        await Promise.all([loadReconciliation(), loadPayouts()]);
+    }catch(error){
+        showMessage("error", error.message);
+    }finally{
+        refreshAllBtn.disabled = false;
+    }
+});
+
+payinRows.addEventListener("click", function(event){
+    const viewId = event.target.getAttribute("data-view-payin");
+
+    if(!viewId){
+        return;
+    }
+
+    const payin = payins.find(function(item){
+        return item.id === viewId;
+    });
+
+    if(payin){
+        showPayinDetails(payin);
+    }
+});
+
+payoutRows.addEventListener("click", function(event){
+    const viewId = event.target.getAttribute("data-view");
+    const refreshId = event.target.getAttribute("data-refresh");
+
+    if(viewId){
+        const payout = payouts.find(function(item){
+            return item.id === viewId;
+        });
+
+        if(payout){
+            showDetails(payout);
+        }
+    }
+
+    if(refreshId){
+        event.target.disabled = true;
+        refreshPayout(refreshId)
+            .catch(function(error){
+                showMessage("error", error.message);
+            })
+            .finally(function(){
+                event.target.disabled = false;
+            });
+    }
+});
+
+payoutForm.addEventListener("submit", async function(event){
+    event.preventDefault();
+    clearMessage();
+
+    const formData = Object.fromEntries(new FormData(payoutForm).entries());
+    const payoutPreview = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        accountNumber: formData.accountNumber.trim(),
+        ifsc: formData.ifsc.trim().toUpperCase(),
+        bankName: formData.bankName.trim(),
+        amount: Number(formData.amount)
+    };
+
+    const confirmed = window.confirm(
+        "Confirm payout request\n\n" +
+        "Name: " + payoutPreview.name + "\n" +
+        "Email: " + payoutPreview.email + "\n" +
+        "Account: " + payoutPreview.accountNumber + "\n" +
+        "IFSC: " + payoutPreview.ifsc + "\n" +
+        "Bank: " + payoutPreview.bankName + "\n" +
+        "Amount: INR " + payoutPreview.amount.toFixed(2) + "\n\n" +
+        "This will send the payout request to PSP."
+    );
+
+    if(!confirmed){
+        return;
+    }
+
+    createPayoutBtn.disabled = true;
+
+    try{
+        const data = await apiFetch("/api/admin/payouts", {
+            method: "POST",
+            body: JSON.stringify(payoutPreview)
+        });
+
+        showMessage("info", "Payout request created.");
+        payoutForm.reset();
+        document.getElementById("bankName").value = "State Bank Of India";
+        currentPage = 1;
+        await loadPayouts();
+        showDetails(data.payout);
+    }catch(error){
+        showMessage("error", error.message);
+        if(error.data && error.data.payout){
+            currentPage = 1;
+            await loadPayouts();
+            showDetails(error.data.payout);
+        }
+    }finally{
+        createPayoutBtn.disabled = false;
+    }
+});
+
+setLedgerRange("today");
+
+if(getAdminKey()){
+    Promise.all([loadReconciliation(), loadPayins(), loadPayouts()]).catch(function(error){
+        showMessage("error", error.message);
+    });
+}
+</script>
+</body>
+</html>

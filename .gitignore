@@ -1,0 +1,39 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Dependencies and package-manager caches
+node_modules/
+.npm/
+
+# Runtime/cache folders copied from server home
+.cache/
+.local/
+.pm2/
+.ssh/
+snap/
+
+# Logs and transient output
+*.log
+server.out.log
+server.err.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Shell/editor history and machine-local files
+.bash_history
+.bashrc
+.cloud-locale-test.skip
+.lesshst
+.profile
+.psql_history
+.wget-hsts
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+coverage/

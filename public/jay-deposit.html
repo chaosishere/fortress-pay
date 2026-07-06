@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fortress Pay - Deposit</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    min-height:100vh;
+    font-family:Arial, sans-serif;
+    background:#edf1f6;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:22px;
+    color:#111827;
+}
+
+.card{
+    width:100%;
+    max-width:520px;
+    background:#ffffff;
+    border-radius:8px;
+    padding:24px;
+    box-shadow:0 14px 34px rgba(15,23,42,0.12);
+    border:1px solid #dfe6ef;
+}
+
+h2{
+    text-align:center;
+    margin:0 0 7px;
+    font-size:24px;
+}
+
+.subtitle{
+    text-align:center;
+    color:#5f6b7a;
+    font-size:13px;
+    line-height:1.5;
+    margin-bottom:20px;
+}
+
+.hidden{display:none}
+
+.field{margin-bottom:15px}
+
+label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:7px;
+    color:#344154;
+}
+
+input{
+    width:100%;
+    padding:13px 14px;
+    border:1px solid #cfd8e3;
+    border-radius:7px;
+    font-size:14px;
+    background:#ffffff;
+    color:#111827;
+}
+
+input:focus{
+    outline:none;
+    border-color:#1d4ed8;
+    box-shadow:0 0 0 3px rgba(29,78,216,0.13);
+}
+
+input.invalid{
+    border-color:#dc2626;
+    background:#fff7f7;
+}
+
+input:disabled{
+    background:#f3f4f6;
+    cursor:not-allowed;
+}
+
+.help-text{
+    margin-top:6px;
+    font-size:11px;
+    color:#657386;
+    line-height:1.4;
+}
+
+.limit-note{
+    font-size:12px;
+    color:#405066;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:7px;
+    text-align:center;
+    padding:10px;
+    margin:4px 0 18px;
+}
+
+button{
+    min-height:44px;
+    padding:12px 14px;
+    background:#1d4ed8;
+    color:#ffffff;
+    border:none;
+    border-radius:7px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+button:hover{background:#1e40af}
+button:disabled{background:#9ca3af;cursor:not-allowed}
+
+.primary-btn{width:100%}
+
+.copy-btn{
+    width:76px;
+    min-width:76px;
+    background:#eef4ff;
+    color:#164196;
+    border:1px solid #c9dafc;
+}
+
+.copy-btn:hover{background:#dbeafe}
+
+.spinner{
+    width:16px;
+    height:16px;
+    border:2px solid rgba(255,255,255,0.45);
+    border-top-color:#ffffff;
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+    display:none;
+}
+
+button.loading .spinner{display:inline-block}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.message{
+    display:none;
+    margin-top:14px;
+    padding:12px 13px;
+    border-radius:7px;
+    font-size:13px;
+    line-height:1.45;
+    text-align:left;
+}
+
+.message.error{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.message.info{display:block;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe}
+.message.success{display:block;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+
+.summary{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.summary-box{
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:7px;
+    padding:12px;
+}
+
+.summary-label{
+    color:#607089;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    margin-bottom:5px;
+}
+
+.summary-value{
+    font-size:16px;
+    font-weight:800;
+    overflow-wrap:anywhere;
+}
+
+.tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin:14px 0 12px;
+}
+
+.tab{
+    width:100%;
+    background:#ffffff;
+    color:#152238;
+    border:1px solid #cfd8e3;
+}
+
+.tab.active{
+    background:#1d4ed8;
+    color:#ffffff;
+    border-color:#1d4ed8;
+}
+
+.detail-panel{
+    border:1px solid #d7e0eb;
+    border-radius:7px;
+    padding:14px;
+    margin-bottom:14px;
+}
+
+.qr-box{
+    display:flex;
+    justify-content:center;
+    padding:8px 0 14px;
+    border-bottom:1px solid #edf2f7;
+    margin-bottom:6px;
+}
+
+.qr-box img{
+    width:220px;
+    height:220px;
+    max-width:100%;
+    border:1px solid #e2e8f0;
+    border-radius:7px;
+    padding:8px;
+    background:#ffffff;
+}
+
+.detail-row{
+    display:grid;
+    grid-template-columns:104px minmax(0,1fr) 76px;
+    align-items:center;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px solid #edf2f7;
+}
+
+.detail-row:last-child{border-bottom:none}
+
+.detail-label{
+    color:#607089;
+    font-size:12px;
+    font-weight:700;
+}
+
+.detail-value{
+    min-width:0;
+    color:#172033;
+    font-size:14px;
+    font-weight:700;
+    overflow-wrap:anywhere;
+}
+
+.utr-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 104px;
+    gap:10px;
+}
+
+.note{
+    margin-top:16px;
+    font-size:12px;
+    color:#66758a;
+    text-align:center;
+    line-height:1.5;
+}
+
+@media(max-width:520px){
+    body{padding:14px}
+    .card{padding:18px}
+    h2{font-size:22px}
+    .summary{grid-template-columns:1fr}
+    .detail-row{grid-template-columns:88px minmax(0,1fr);gap:8px}
+    .detail-row .copy-btn{grid-column:2;width:100%;min-width:0}
+    .utr-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Deposit Funds</h2>
+
+    <div class="subtitle">
+        Enter your registered FortressFX details to create a secure payment request.
+    </div>
+
+    <form id="depositForm" novalidate>
+        <div class="field">
+            <label for="username">Bank Account Holder Name</label>
+            <input id="username" type="text" name="username" placeholder="Enter bank account holder name" autocomplete="name" required />
+            <div class="help-text">Use the same name as your bank account.</div>
+        </div>
+
+        <div class="field">
+            <label for="email">FortressFX Registered Email Address</label>
+            <input id="email" type="email" name="email" placeholder="Enter registered email address" autocomplete="email" required />
+        </div>
+
+        <div class="field">
+            <label for="mobile">Mobile Number</label>
+            <input id="mobile" type="tel" name="mobile" placeholder="Enter 10 digit mobile number" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required />
+        </div>
+
+        <div class="field">
+            <label for="amount">Amount (INR)</label>
+            <input id="amount" type="number" name="amount" placeholder="Enter amount" min="1" step="1" required />
+        </div>
+
+        <button type="submit" id="submitBtn" class="primary-btn">
+            <span class="spinner"></span>
+            <span id="buttonText">Create Payment Details</span>
+        </button>
+
+        <div class="message" id="messageBox"></div>
+    </form>
+
+    <section id="paymentPanel" class="hidden">
+        <div class="summary">
+            <div class="summary-box">
+                <div class="summary-label">Amount</div>
+                <div class="summary-value" id="summaryAmount">--</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-label">Order ID</div>
+                <div class="summary-value" id="summaryOrder">--</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button type="button" class="tab active" data-tab="upi">UPI</button>
+            <button type="button" class="tab" data-tab="bank">Bank transfer (IMPS)</button>
+        </div>
+
+        <div id="upiPanel" class="detail-panel">
+            <div id="qrBox" class="qr-box hidden">
+                <img id="qrCode" alt="UPI payment QR code" />
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">UPI ID</div>
+                <div class="detail-value" id="upiId">--</div>
+                <button type="button" class="copy-btn" data-copy="upiId">Copy</button>
+            </div>
+        </div>
+
+        <div id="bankPanel" class="detail-panel hidden">
+            <div class="detail-row">
+                <div class="detail-label">Bank</div>
+                <div class="detail-value" id="bankName">--</div>
+                <button type="button" class="copy-btn" data-copy="bankName">Copy</button>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Holder</div>
+                <div class="detail-value" id="accountHolder">--</div>
+                <button type="button" class="copy-btn" data-copy="accountHolder">Copy</button>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Account</div>
+                <div class="detail-value" id="accountNumber">--</div>
+                <button type="button" class="copy-btn" data-copy="accountNumber">Copy</button>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">IFSC</div>
+                <div class="detail-value" id="ifsc">--</div>
+                <button type="button" class="copy-btn" data-copy="ifsc">Copy</button>
+            </div>
+        </div>
+
+        <form id="utrForm" novalidate>
+            <div class="field">
+                <label for="utr">Enter 12 digit UTR after payment</label>
+                <div class="utr-row">
+                    <input id="utr" type="text" name="utr" placeholder="UTR / Bank Ref no." inputmode="numeric" maxlength="12" required />
+                    <button type="submit" id="utrBtn">Submit</button>
+                </div>
+            </div>
+            <div class="message" id="utrMessage"></div>
+        </form>
+    </section>
+
+    <div class="note">
+        Please pay only to the account details shown for this order and submit the correct UTR after payment.
+    </div>
+</div>
+
+<script>
+const form = document.getElementById("depositForm");
+const submitBtn = document.getElementById("submitBtn");
+const buttonText = document.getElementById("buttonText");
+const messageBox = document.getElementById("messageBox");
+const mobileInput = document.getElementById("mobile");
+const inputs = form.querySelectorAll("input");
+const paymentPanel = document.getElementById("paymentPanel");
+const utrForm = document.getElementById("utrForm");
+const utrInput = document.getElementById("utr");
+const utrBtn = document.getElementById("utrBtn");
+const utrMessage = document.getElementById("utrMessage");
+let currentDepositId = null;
+
+function showMessage(box, type, text){
+    box.className = "message " + type;
+    box.textContent = text;
+}
+
+function clearMessage(box){
+    box.className = "message";
+    box.textContent = "";
+}
+
+function setLoading(isLoading, text){
+    submitBtn.disabled = isLoading;
+    submitBtn.classList.toggle("loading", isLoading);
+    buttonText.textContent = text || (isLoading ? "Processing..." : "Create Payment Details");
+
+    inputs.forEach(function(input){
+        input.disabled = isLoading;
+    });
+}
+
+function markInvalid(input){
+    input.classList.add("invalid");
+    input.focus();
+}
+
+function clearInvalid(){
+    inputs.forEach(function(input){
+        input.classList.remove("invalid");
+    });
+}
+
+function isValidEmail(email){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function formatInr(value){
+    const number = Number(value);
+    if(!Number.isFinite(number)){
+        return "--";
+    }
+    return "INR " + number.toLocaleString("en-IN");
+}
+
+function setText(id, value){
+    document.getElementById(id).textContent = value || "--";
+}
+
+function renderPaymentDetails(depositId, details, fallbackAmount){
+    currentDepositId = depositId;
+    const amount = details.amount || fallbackAmount;
+    const hasUpi = Boolean(details.upiId || details.qrCode);
+
+    setText("summaryAmount", formatInr(amount));
+    setText("summaryOrder", details.orderId || depositId);
+    setText("upiId", details.upiId);
+    setText("bankName", details.bankName);
+    setText("accountHolder", details.accountHolder);
+    setText("accountNumber", details.accountNumber);
+    setText("ifsc", details.ifsc);
+
+    if(details.qrCode){
+        document.getElementById("qrCode").src = details.qrCode;
+        document.getElementById("qrBox").classList.remove("hidden");
+    }
+
+    document.querySelector('[data-tab="upi"]').classList.toggle("hidden", !hasUpi);
+    document.getElementById("upiPanel").classList.toggle("hidden", !hasUpi);
+    document.querySelector('[data-tab="bank"]').classList.toggle("active", !hasUpi);
+    document.querySelector('[data-tab="upi"]').classList.toggle("active", hasUpi);
+    document.getElementById("bankPanel").classList.toggle("hidden", hasUpi);
+
+    form.classList.add("hidden");
+    paymentPanel.classList.remove("hidden");
+    showMessage(utrMessage, "success", "Payment details loaded. Pay the amount and submit the UTR below.");
+}
+
+mobileInput.addEventListener("input", function(){
+    this.value = this.value.replace(/\D/g, "").slice(0, 10);
+});
+
+utrInput.addEventListener("input", function(){
+    this.value = this.value.replace(/\D/g, "").slice(0, 12);
+    this.classList.remove("invalid");
+    clearMessage(utrMessage);
+});
+
+inputs.forEach(function(input){
+    input.addEventListener("input", function(){
+        input.classList.remove("invalid");
+        clearMessage(messageBox);
+    });
+});
+
+document.querySelectorAll(".tab").forEach(function(tab){
+    tab.addEventListener("click", function(){
+        const name = tab.dataset.tab;
+        document.querySelectorAll(".tab").forEach(function(item){
+            item.classList.toggle("active", item.dataset.tab === name);
+        });
+        document.getElementById("upiPanel").classList.toggle("hidden", name !== "upi");
+        document.getElementById("bankPanel").classList.toggle("hidden", name !== "bank");
+    });
+});
+
+document.querySelectorAll("[data-copy]").forEach(function(button){
+    button.addEventListener("click", async function(){
+        const target = document.getElementById(button.dataset.copy);
+        const value = target.textContent.trim();
+
+        if(!value || value === "--"){
+            return;
+        }
+
+        await navigator.clipboard.writeText(value);
+        button.textContent = "Copied";
+        setTimeout(function(){ button.textContent = "Copy"; }, 1200);
+    });
+});
+
+form.addEventListener("submit", async function(e){
+    e.preventDefault();
+    clearMessage(messageBox);
+    clearInvalid();
+
+    const formData = Object.fromEntries(new FormData(this).entries());
+    const username = formData.username.trim();
+    const email = formData.email.trim().toLowerCase();
+    const mobile = formData.mobile.trim();
+    const amount = Number(formData.amount);
+
+    if(!username){
+        markInvalid(document.getElementById("username"));
+        showMessage(messageBox, "error", "Please enter the bank account holder name.");
+        return;
+    }
+
+    if(!isValidEmail(email)){
+        markInvalid(document.getElementById("email"));
+        showMessage(messageBox, "error", "Please enter a valid FortressFX registered email address.");
+        return;
+    }
+
+    if(!/^[0-9]{10}$/.test(mobile)){
+        markInvalid(document.getElementById("mobile"));
+        showMessage(messageBox, "error", "Please enter a valid 10 digit mobile number.");
+        return;
+    }
+
+    if(!amount || amount <= 0){
+        markInvalid(document.getElementById("amount"));
+        showMessage(messageBox, "error", "Please enter a valid deposit amount.");
+        return;
+    }
+
+    setLoading(true, "Creating payment...");
+    showMessage(messageBox, "info", "Creating payment details. Please wait, do not refresh this page.");
+
+    try{
+        const response = await fetch("/api/deposit", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                username: username,
+                email: email,
+                clientCode: "fort",
+                mobile: mobile,
+                amount: String(amount)
+            })
+        });
+
+        let data = {};
+
+        try{
+            data = await response.json();
+        }catch(_){
+            data = {};
+        }
+
+        setLoading(false);
+
+        if(response.ok && data.paymentDetails){
+            renderPaymentDetails(data.depositId, data.paymentDetails, amount);
+            return;
+        }
+
+        if(response.status === 404){
+            markInvalid(document.getElementById("email"));
+            showMessage(messageBox, "error", data.error || "This email is not associated with an active FortressFX USD eWallet deposit account.");
+            return;
+        }
+
+        showMessage(messageBox, "error", data.error || "Payment initialization failed. Please check your details and try again.");
+    }catch(error){
+        setLoading(false);
+        showMessage(messageBox, "error", "Unable to connect to the payment server. Please check your internet connection and try again.");
+    }
+});
+
+utrForm.addEventListener("submit", async function(e){
+    e.preventDefault();
+    clearMessage(utrMessage);
+
+    const utr = utrInput.value.replace(/\D/g, "");
+
+    if(!/^\d{12}$/.test(utr)){
+        utrInput.classList.add("invalid");
+        utrInput.focus();
+        showMessage(utrMessage, "error", "Please enter a valid 12 digit UTR.");
+        return;
+    }
+
+    if(!currentDepositId){
+        showMessage(utrMessage, "error", "Deposit reference is missing. Please create payment details again.");
+        return;
+    }
+
+    utrBtn.disabled = true;
+    utrBtn.textContent = "Submitting...";
+    showMessage(utrMessage, "info", "Submitting UTR for verification.");
+
+    try{
+        const response = await fetch("/api/deposit/" + encodeURIComponent(currentDepositId) + "/utr", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({utr: utr})
+        });
+        let data = {};
+
+        try{
+            data = await response.json();
+        }catch(_){
+            data = {};
+        }
+
+        if(response.ok){
+            showMessage(utrMessage, "success", data.message || "UTR submitted successfully. Redirecting...");
+            utrInput.disabled = true;
+            if(data.redirectUrl){
+                setTimeout(function(){
+                    window.location.href = data.redirectUrl;
+                }, 1500);
+            }
+            return;
+        }
+
+        const pspMessage = data.message && data.message !== data.error ? " " + data.message : "";
+        showMessage(utrMessage, "error", (data.error || "UTR could not be submitted. Please check and try again.") + pspMessage);
+    }catch(error){
+        showMessage(utrMessage, "error", "Unable to submit UTR right now. Please try again.");
+    }finally{
+        if(!utrInput.disabled){
+            utrBtn.disabled = false;
+            utrBtn.textContent = "Submit";
+        }
+    }
+});
+</script>
+
+</body>
+</html>
