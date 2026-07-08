@@ -12,109 +12,128 @@ body{
     margin:0;
     min-height:100vh;
     font-family:Arial, sans-serif;
-    background:#edf1f6;
+    background:#16171a;
     display:flex;
     justify-content:center;
     align-items:flex-start;
-    padding:22px;
-    color:#111827;
+    padding:18px 22px 28px;
+    color:#f8fafc;
 }
 
 body.embedded{
     min-height:auto;
-    padding:12px;
-    background:#f8fafc;
-}
-
-body.embedded .card{
-    max-width:640px;
-    box-shadow:none;
 }
 
 .card{
     width:100%;
-    max-width:520px;
-    background:#ffffff;
-    border-radius:8px;
-    padding:24px;
-    box-shadow:0 14px 34px rgba(15,23,42,0.12);
-    border:1px solid #dfe6ef;
+    max-width:940px;
+    background:#202124;
+    border-radius:10px;
+    padding:36px;
+    box-shadow:none;
+    border:1px solid #30333a;
 }
 
 h2{
     text-align:center;
     margin:0 0 7px;
-    font-size:24px;
+    font-size:30px;
+    line-height:1.2;
+    color:#ffffff;
 }
 
 .subtitle{
     text-align:center;
-    color:#5f6b7a;
-    font-size:13px;
+    color:#a7afbd;
+    font-size:16px;
     line-height:1.5;
-    margin-bottom:20px;
+    margin-bottom:28px;
 }
 
 .hidden{display:none}
 
-.field{margin-bottom:15px}
+.field{margin-bottom:20px}
 
 label{
     display:block;
-    font-size:13px;
+    font-size:15px;
     font-weight:700;
     margin-bottom:7px;
-    color:#344154;
+    color:#f3f6fb;
 }
 
 input{
     width:100%;
+    min-height:58px;
     padding:13px 14px;
-    border:1px solid #cfd8e3;
-    border-radius:7px;
-    font-size:14px;
-    background:#ffffff;
-    color:#111827;
+    border:1px solid #424653;
+    border-radius:9px;
+    font-size:17px;
+    background:#17181b;
+    color:#f8fafc;
+}
+
+input::placeholder{
+    color:#8e96a8;
 }
 
 input:focus{
     outline:none;
-    border-color:#1d4ed8;
-    box-shadow:0 0 0 3px rgba(29,78,216,0.13);
+    border-color:#4b6fe8;
+    box-shadow:0 0 0 3px rgba(75,111,232,0.22);
 }
 
 input.invalid{
-    border-color:#dc2626;
-    background:#fff7f7;
+    border-color:#ef4444;
+    background:#2a171b;
 }
 
 input:disabled{
-    background:#f3f4f6;
+    background:#25272d;
     cursor:not-allowed;
 }
 
 .help-text{
     margin-top:6px;
-    font-size:11px;
-    color:#657386;
+    font-size:13px;
+    color:#9ca6b8;
     line-height:1.4;
 }
 
 .limit-note{
-    font-size:12px;
-    color:#405066;
-    background:#f8fafc;
-    border:1px solid #e2e8f0;
-    border-radius:7px;
+    font-size:14px;
+    color:#d6ddeb;
+    background:#17181b;
+    border:1px solid #353944;
+    border-radius:9px;
     text-align:center;
-    padding:10px;
-    margin:4px 0 18px;
+    padding:14px;
+    margin:2px 0 22px;
+}
+
+.estimate-box{
+    font-size:14px;
+    color:#d6ddeb;
+    background:#17181b;
+    border:1px solid #353944;
+    border-radius:9px;
+    padding:13px 14px;
+    margin:-8px 0 16px;
+}
+
+.estimate-box strong{
+    color:#ffffff;
+}
+
+.estimate-box span{
+    color:#9ca6b8;
+    font-size:12px;
 }
 
 button{
     min-height:44px;
     padding:12px 14px;
-    background:#1d4ed8;
+    background:#36589b;
     color:#ffffff;
     border:none;
     border-radius:7px;
@@ -127,20 +146,28 @@ button{
     gap:8px;
 }
 
-button:hover{background:#1e40af}
-button:disabled{background:#9ca3af;cursor:not-allowed}
+button:hover{background:#4166b3}
+button:disabled{background:#4b5563;cursor:not-allowed}
 
 .primary-btn{width:100%}
+
+.primary-btn{
+    min-height:64px;
+    border-radius:9px;
+    font-size:17px;
+}
 
 .copy-btn{
     width:76px;
     min-width:76px;
-    background:#eef4ff;
-    color:#164196;
-    border:1px solid #c9dafc;
+    min-height:46px;
+    background:#252936;
+    color:#dbe7ff;
+    border:1px solid #3c4967;
+    border-radius:9px;
 }
 
-.copy-btn:hover{background:#dbeafe}
+.copy-btn:hover{background:#2e3650}
 
 .spinner{
     width:16px;
@@ -166,26 +193,26 @@ button.loading .spinner{display:inline-block}
     text-align:left;
 }
 
-.message.error{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
-.message.info{display:block;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe}
-.message.success{display:block;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+.message.error{display:block;background:#32191e;color:#fecaca;border:1px solid #7f1d1d}
+.message.info{display:block;background:#16213a;color:#bfdbfe;border:1px solid #1d4ed8}
+.message.success{display:block;background:#10281f;color:#bbf7d0;border:1px solid #047857}
 
 .summary{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:repeat(3, 1fr);
     gap:10px;
     margin-bottom:14px;
 }
 
 .summary-box{
-    background:#f8fafc;
-    border:1px solid #e2e8f0;
-    border-radius:7px;
+    background:#17181b;
+    border:1px solid #353944;
+    border-radius:10px;
     padding:12px;
 }
 
 .summary-label{
-    color:#607089;
+    color:#9ca6b8;
     font-size:11px;
     font-weight:700;
     text-transform:uppercase;
@@ -195,6 +222,7 @@ button.loading .spinner{display:inline-block}
 .summary-value{
     font-size:16px;
     font-weight:800;
+    color:#ffffff;
     overflow-wrap:anywhere;
 }
 
@@ -207,20 +235,24 @@ button.loading .spinner{display:inline-block}
 
 .tab{
     width:100%;
-    background:#ffffff;
-    color:#152238;
-    border:1px solid #cfd8e3;
+    min-height:56px;
+    background:#17181b;
+    color:#f8fafc;
+    border:1px solid #424653;
+    border-radius:9px;
+    font-size:16px;
 }
 
 .tab.active{
-    background:#1d4ed8;
+    background:#36589b;
     color:#ffffff;
-    border-color:#1d4ed8;
+    border-color:#36589b;
 }
 
 .detail-panel{
-    border:1px solid #d7e0eb;
-    border-radius:7px;
+    border:1px solid #353944;
+    border-radius:10px;
+    background:#17181b;
     padding:14px;
     margin-bottom:14px;
 }
@@ -229,7 +261,7 @@ button.loading .spinner{display:inline-block}
     display:flex;
     justify-content:center;
     padding:8px 0 14px;
-    border-bottom:1px solid #edf2f7;
+    border-bottom:1px solid #30333a;
     margin-bottom:6px;
 }
 
@@ -237,7 +269,7 @@ button.loading .spinner{display:inline-block}
     width:220px;
     height:220px;
     max-width:100%;
-    border:1px solid #e2e8f0;
+    border:1px solid #353944;
     border-radius:7px;
     padding:8px;
     background:#ffffff;
@@ -249,20 +281,20 @@ button.loading .spinner{display:inline-block}
     align-items:center;
     gap:10px;
     padding:9px 0;
-    border-bottom:1px solid #edf2f7;
+    border-bottom:1px solid #30333a;
 }
 
 .detail-row:last-child{border-bottom:none}
 
 .detail-label{
-    color:#607089;
+    color:#9ca6b8;
     font-size:12px;
     font-weight:700;
 }
 
 .detail-value{
     min-width:0;
-    color:#172033;
+    color:#f8fafc;
     font-size:14px;
     font-weight:700;
     overflow-wrap:anywhere;
@@ -277,15 +309,19 @@ button.loading .spinner{display:inline-block}
 .note{
     margin-top:16px;
     font-size:12px;
-    color:#66758a;
+    color:#9ca6b8;
     text-align:center;
     line-height:1.5;
 }
 
 @media(max-width:520px){
     body{padding:14px}
-    .card{padding:18px}
-    h2{font-size:22px}
+    .card{padding:20px}
+    h2{font-size:24px}
+    body.embedded{padding:10px}
+    .subtitle{font-size:14px;margin-bottom:20px}
+    input{min-height:52px;font-size:15px}
+    .primary-btn{min-height:54px;font-size:15px}
     .summary{grid-template-columns:1fr}
     .detail-row{grid-template-columns:88px minmax(0,1fr);gap:8px}
     .detail-row .copy-btn{grid-column:2;width:100%;min-width:0}
@@ -325,6 +361,11 @@ button.loading .spinner{display:inline-block}
             <input id="amount" type="number" name="amount" placeholder="Enter amount" min="1" step="1" required />
         </div>
 
+        <div class="estimate-box" id="usdEstimate">
+            Estimated wallet credit: <strong>USD --</strong><br>
+            <span>Rate: 1 USD = INR <span id="exchangeRateLabel">95.60</span></span>
+        </div>
+
         <button type="submit" id="submitBtn" class="primary-btn">
             <span class="spinner"></span>
             <span id="buttonText">Create Payment Details</span>
@@ -338,6 +379,10 @@ button.loading .spinner{display:inline-block}
             <div class="summary-box">
                 <div class="summary-label">Amount</div>
                 <div class="summary-value" id="summaryAmount">--</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-label">Estimated Credit</div>
+                <div class="summary-value" id="summaryUsd">--</div>
             </div>
             <div class="summary-box">
                 <div class="summary-label">Order ID</div>
@@ -386,9 +431,9 @@ button.loading .spinner{display:inline-block}
 
         <form id="utrForm" novalidate>
             <div class="field">
-                <label for="utr">Enter 12 digit UTR after payment</label>
+                <label for="utr">Enter UTR / bank reference after payment</label>
                 <div class="utr-row">
-                    <input id="utr" type="text" name="utr" placeholder="UTR / Bank Ref no." inputmode="numeric" maxlength="12" required />
+                    <input id="utr" type="text" name="utr" placeholder="UTR / Bank Ref no." inputmode="numeric" required />
                     <button type="submit" id="utrBtn">Submit</button>
                 </div>
             </div>
@@ -407,6 +452,9 @@ const submitBtn = document.getElementById("submitBtn");
 const buttonText = document.getElementById("buttonText");
 const messageBox = document.getElementById("messageBox");
 const mobileInput = document.getElementById("mobile");
+const amountInput = document.getElementById("amount");
+const usdEstimate = document.getElementById("usdEstimate");
+const exchangeRateLabel = document.getElementById("exchangeRateLabel");
 const inputs = form.querySelectorAll("input");
 const paymentPanel = document.getElementById("paymentPanel");
 const utrForm = document.getElementById("utrForm");
@@ -414,6 +462,7 @@ const utrInput = document.getElementById("utr");
 const utrBtn = document.getElementById("utrBtn");
 const utrMessage = document.getElementById("utrMessage");
 let currentDepositId = null;
+let inrPerUsd = 95.6;
 
 function isEmbedded(){
     try{
@@ -472,32 +521,6 @@ function applyIframeMode(){
     }
 }
 
-function prefillFromQuery(){
-    const params = new URLSearchParams(window.location.search);
-    const map = {
-        username: ["username", "name", "fullName"],
-        email: ["email"],
-        mobile: ["mobile", "phone"],
-        amount: ["amount"]
-    };
-
-    Object.keys(map).forEach(function(fieldId){
-        const input = document.getElementById(fieldId);
-
-        if(!input || input.value){
-            return;
-        }
-
-        const key = map[fieldId].find(function(item){
-            return params.get(item);
-        });
-
-        if(key){
-            input.value = params.get(key);
-        }
-    });
-}
-
 function showMessage(box, type, text){
     box.className = "message " + type;
     box.textContent = text;
@@ -541,6 +564,40 @@ function formatInr(value){
     return "INR " + number.toLocaleString("en-IN");
 }
 
+function formatUsd(value){
+    const number = Number(value);
+
+    if(!Number.isFinite(number)){
+        return "USD --";
+    }
+
+    return "USD " + number.toLocaleString("en-US", {
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+    });
+}
+
+function updateUsdEstimate(){
+    const amount = Number(amountInput.value);
+    const usd = amount && inrPerUsd ? amount / inrPerUsd : NaN;
+    usdEstimate.querySelector("strong").textContent = formatUsd(usd);
+    exchangeRateLabel.textContent = Number(inrPerUsd).toFixed(2);
+}
+
+async function loadDepositConfig(){
+    try{
+        const response = await fetch("/api/deposit/config");
+        const data = await response.json();
+        const rate = Number(data.inrPerUsd);
+
+        if(Number.isFinite(rate) && rate > 0){
+            inrPerUsd = rate;
+        }
+    }catch(_){}
+
+    updateUsdEstimate();
+}
+
 function setText(id, value){
     document.getElementById(id).textContent = value || "--";
 }
@@ -551,6 +608,7 @@ function renderPaymentDetails(depositId, details, fallbackAmount){
     const hasUpi = Boolean(details.upiId || details.qrCode);
 
     setText("summaryAmount", formatInr(amount));
+    setText("summaryUsd", formatUsd(Number(amount) / inrPerUsd));
     setText("summaryOrder", details.orderId || depositId);
     setText("upiId", details.upiId);
     setText("bankName", details.bankName);
@@ -579,8 +637,10 @@ mobileInput.addEventListener("input", function(){
     this.value = this.value.replace(/\D/g, "").slice(0, 10);
 });
 
+amountInput.addEventListener("input", updateUsdEstimate);
+
 utrInput.addEventListener("input", function(){
-    this.value = this.value.replace(/\D/g, "").slice(0, 12);
+    this.value = this.value.replace(/\D/g, "");
     this.classList.remove("invalid");
     clearMessage(utrMessage);
 });
@@ -703,10 +763,10 @@ utrForm.addEventListener("submit", async function(e){
 
     const utr = utrInput.value.replace(/\D/g, "");
 
-    if(!/^\d{12}$/.test(utr)){
+    if(!/^\d+$/.test(utr)){
         utrInput.classList.add("invalid");
         utrInput.focus();
-        showMessage(utrMessage, "error", "Please enter a valid 12 digit UTR.");
+        showMessage(utrMessage, "error", "Please enter a valid numeric UTR / bank reference.");
         return;
     }
 
@@ -723,7 +783,7 @@ utrForm.addEventListener("submit", async function(e){
         const response = await fetch("/api/deposit/" + encodeURIComponent(currentDepositId) + "/utr", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({utr: utr})
+            body: JSON.stringify({utr: utr, flexibleUtr: true})
         });
         let data = {};
 
@@ -756,7 +816,7 @@ utrForm.addEventListener("submit", async function(e){
     }
 });
 
-prefillFromQuery();
+loadDepositConfig();
 applyIframeMode();
 </script>
 

@@ -508,6 +508,17 @@ function normalizeManualDepositStatus(payload) {
   return "UTR_SUBMITTED";
 }
 
+function getDepositInrPerUsd() {
+  const rate = Number(process.env.DEPOSIT_INR_PER_USD || process.env.INR_PER_USD || 95.6);
+  return Number.isFinite(rate) && rate > 0 ? rate : 95.6;
+}
+
+router.get("/deposit/config", (req, res) => {
+  res.json({
+    inrPerUsd: getDepositInrPerUsd(),
+  });
+});
+
 router.post("/deposit", async (req, res) => {
   try {
     const { username, email, clientCode, mobile, amount } = req.body;
@@ -644,9 +655,14 @@ router.post("/deposit/:id/utr", async (req, res) => {
     await ensureDepositsTable();
 
     const utr = String(req.body.utr || "").replace(/\D/g, "");
+    const flexibleUtr = req.body.flexibleUtr === true;
 
-    if (!/^\d{12}$/.test(utr)) {
-      return res.status(400).json({ error: "Please enter a valid 12 digit UTR" });
+    if (flexibleUtr ? !/^\d+$/.test(utr) : !/^(\d{7}|\d{12}|\d{13}|\d{14})$/.test(utr)) {
+      return res.status(400).json({
+        error: flexibleUtr
+          ? "Please enter a valid numeric UTR / bank reference"
+          : "Please enter a valid 7, 12, 13, or 14 digit UTR / bank reference",
+      });
     }
 
     const result = await pool.query(
