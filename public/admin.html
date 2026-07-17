@@ -573,8 +573,8 @@ pre{
                     <input id="ifsc" name="ifsc" required />
                 </div>
                 <div class="field">
-                    <label for="amount">Amount</label>
-                    <input id="amount" name="amount" type="number" min="1" step="0.01" required />
+                    <label for="amount">Amount (USD)</label>
+                    <input id="amount" name="amountUsd" type="number" min="1" step="0.01" required />
                 </div>
             </div>
             <div class="field">
@@ -1403,7 +1403,7 @@ async function exportPayoutsCsv(){
         const exportRows = await fetchAllPayoutsForExport();
         downloadCsv(
             "payout-report.csv",
-            ["Status", "Payout ID", "Name", "Phone", "Email", "Account Number", "IFSC", "Bank", "Amount", "UTR", "Order ID", "Updated"],
+            ["Status", "Payout ID", "Name", "Phone", "Email", "Account Number", "IFSC", "Bank", "Amount INR", "Amount USD", "USD Rate", "Paisa", "UTR", "Order ID", "Updated"],
             exportRows.map(function(payout){
                 return [
                     getPayoutStatusLabel(payout),
@@ -1415,6 +1415,9 @@ async function exportPayoutsCsv(){
                     payout.ifsc,
                     payout.bankName,
                     payout.amount,
+                    payout.amountUsd,
+                    payout.usdToInrRate,
+                    payout.amountPaisa,
                     payout.utr,
                     payout.orderId,
                     formatDate(payout.updatedAt)
@@ -1445,7 +1448,10 @@ function renderRows(){
                 <strong>Mobile Number:</strong> ${payout.phone || "-"}<br>
                 <strong>Email:</strong> ${payout.email || "-"}
             </td>
-            <td>${formatMoney(payout.amount)}</td>
+            <td>
+                ${formatMoney(payout.amount)}<br>
+                <span class="muted">${payout.amountUsd ? "USD " + Number(payout.amountUsd).toFixed(2) : "INR direct"}</span>
+            </td>
             <td>
                 <strong>TransactionId:</strong> <span class="mono">${payout.id}</span><br>
                 <strong>OrderId:</strong> ${payout.orderId || "-"}<br>
@@ -1476,6 +1482,8 @@ function showDetails(payout){
     detailsBox.textContent = JSON.stringify({
         transactionID: payout.id,
         status: payout.status,
+        amountUsd: payout.amountUsd,
+        usdToInrRate: payout.usdToInrRate,
         amountInr: payout.amount,
         amountPaisa: payout.amountPaisa,
         email: payout.email,
@@ -1755,7 +1763,7 @@ payoutForm.addEventListener("submit", async function(event){
         accountNumber: formData.accountNumber.trim(),
         ifsc: formData.ifsc.trim().toUpperCase(),
         bankName: formData.bankName.trim(),
-        amount: Number(formData.amount)
+        amountUsd: Number(formData.amountUsd)
     };
 
     const confirmed = window.confirm(
@@ -1765,7 +1773,8 @@ payoutForm.addEventListener("submit", async function(event){
         "Account: " + payoutPreview.accountNumber + "\n" +
         "IFSC: " + payoutPreview.ifsc + "\n" +
         "Bank: " + payoutPreview.bankName + "\n" +
-        "Amount: INR " + payoutPreview.amount.toFixed(2) + "\n\n" +
+        "Amount: USD " + payoutPreview.amountUsd.toFixed(2) + "\n" +
+        "Backend will convert USD to rounded INR, then paisa.\n\n" +
         "This will send the payout request to PSP."
     );
 

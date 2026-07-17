@@ -32,6 +32,24 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+function requirePayoutApiKey(req, res, next) {
+  if (!process.env.PAYOUT_API_KEY) {
+    return res.status(503).json({ error: "Payout API key is not configured" });
+  }
+
+  const authHeader = String(req.headers.authorization || "");
+  const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice(7)
+    : null;
+  const apiKey = req.headers["x-api-key"] || bearerToken;
+
+  if (apiKey !== process.env.PAYOUT_API_KEY) {
+    return res.status(401).json({ error: "Invalid payout API key" });
+  }
+
+  next();
+}
+
 async function ensurePayoutsTable() {
   if (payoutsTableReadyPromise) {
     return payoutsTableReadyPromise;
@@ -45,6 +63,8 @@ async function ensurePayoutsTable() {
       ifsc TEXT NOT NULL,
       bank_name TEXT NOT NULL,
       amount NUMERIC(12,2) NOT NULL,
+      amount_usd NUMERIC(12,2),
+      usd_to_inr_rate NUMERIC(12,4),
       amount_paisa INTEGER,
       beneficiary_name TEXT NOT NULL,
       email TEXT,
@@ -66,6 +86,8 @@ async function ensurePayoutsTable() {
 
   await pool.query(`
     ALTER TABLE payouts
+    ADD COLUMN IF NOT EXISTS amount_usd NUMERIC(12,2),
+    ADD COLUMN IF NOT EXISTS usd_to_inr_rate NUMERIC(12,4),
     ADD COLUMN IF NOT EXISTS amount_paisa INTEGER,
     ADD COLUMN IF NOT EXISTS email TEXT,
     ADD COLUMN IF NOT EXISTS phone TEXT,
@@ -133,6 +155,8 @@ function serializePayout(row) {
     ifsc: row.ifsc,
     bankName: row.bank_name,
     amount: Number(row.amount),
+    amountUsd: row.amount_usd === null || typeof row.amount_usd === "undefined" ? null : Number(row.amount_usd),
+    usdToInrRate: row.usd_to_inr_rate === null || typeof row.usd_to_inr_rate === "undefined" ? null : Number(row.usd_to_inr_rate),
     amountPaisa: row.amount_paisa,
     name: row.beneficiary_name,
     email: row.email,
@@ -511,6 +535,42 @@ function normalizeManualDepositStatus(payload) {
 function getDepositInrPerUsd() {
   const rate = Number(process.env.DEPOSIT_INR_PER_USD || process.env.INR_PER_USD || 95.6);
   return Number.isFinite(rate) && rate > 0 ? rate : 95.6;
+}
+
+function getPayoutInrPerUsd() {
+  const rate = Number(
+    process.env.PAYOUT_INR_PER_USD ||
+      process.env.INR_PER_USD ||
+      process.env.DEPOSIT_INR_PER_USD ||
+      95.6
+  );
+
+  return Number.isFinite(rate) && rate > 0 ? rate : 95.6;
+}
+
+function resolvePayoutAmounts(body) {
+  const amountUsd = Number(body.amountUsd || body.usdAmount);
+
+  if (Number.isFinite(amountUsd) && amountUsd > 0) {
+    const usdToInrRate = getPayoutInrPerUsd();
+    const amountInr = Math.round(amountUsd * usdToInrRate);
+
+    return {
+      amountInr,
+      amountUsd: roundMoney(amountUsd),
+      usdToInrRate,
+      amountPaisa: amountInr * 100,
+    };
+  }
+
+  const amountInr = Number(body.amount);
+
+  return {
+    amountInr,
+    amountUsd: null,
+    usdToInrRate: null,
+    amountPaisa: Math.round(amountInr * 100),
+  };
 }
 
 router.get("/deposit/config", (req, res) => {
@@ -1196,28 +1256,40 @@ router.get("/admin/payouts/:id", requireAdmin, async (req, res) => {
   }
 });
 
-router.post("/admin/payouts", requireAdmin, async (req, res) => {
+async function createPayoutFromRequest(req, res) {
   await ensurePayoutsTable();
 
   const accountNumber = String(req.body.accountNumber || "").trim();
   const ifsc = String(req.body.ifsc || "").trim().toUpperCase();
   const bankName = String(req.body.bankName || "State Bank Of India").trim();
-  const amount = Number(req.body.amount);
-  const amountPaisa = Math.round(amount * 100);
+  const { amountInr, amountUsd, usdToInrRate, amountPaisa } = resolvePayoutAmounts(req.body);
   const name = String(req.body.name || "").trim();
   const email = String(req.body.email || "").trim().toLowerCase();
   const phone = String(req.body.phone || "").replace(/\D/g, "");
   const transactionID = randomUUID();
 
-  if (!accountNumber || !ifsc || !bankName || !name || !email || !amount || amount <= 0) {
+  if (!accountNumber || !ifsc || !bankName || !name || !email || !amountInr || amountInr <= 0) {
     return res.status(400).json({ error: "Missing or invalid payout details" });
   }
 
   await pool.query(
     `INSERT INTO payouts
-     (id, account_number, ifsc, bank_name, amount, amount_paisa, beneficiary_name, email, phone, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-    [transactionID, accountNumber, ifsc, bankName, amount, amountPaisa, name, email, phone, "CREATED"]
+     (id, account_number, ifsc, bank_name, amount, amount_usd, usd_to_inr_rate, amount_paisa, beneficiary_name, email, phone, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    [
+      transactionID,
+      accountNumber,
+      ifsc,
+      bankName,
+      amountInr,
+      amountUsd,
+      usdToInrRate,
+      amountPaisa,
+      name,
+      email,
+      phone,
+      "CREATED",
+    ]
   );
 
   try {
@@ -1259,6 +1331,30 @@ router.post("/admin/payouts", requireAdmin, async (req, res) => {
       error: "Payout request failed",
       payout: serializePayout(result.rows[0]),
     });
+  }
+}
+
+router.post("/admin/payouts", requireAdmin, createPayoutFromRequest);
+
+router.post("/payout/request", requirePayoutApiKey, createPayoutFromRequest);
+
+router.get("/payout/:id", requirePayoutApiKey, async (req, res) => {
+  try {
+    await ensurePayoutsTable();
+
+    const result = await pool.query(
+      `SELECT * FROM payouts WHERE id=$1`,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Payout not found" });
+    }
+
+    res.json({ payout: serializePayout(result.rows[0]) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Unable to load payout" });
   }
 });
 
