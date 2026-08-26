@@ -32,6 +32,28 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+function isEnvEnabled(name, fallback) {
+  const value = process.env[name];
+
+  if (typeof value === "undefined" || value === "") {
+    return fallback;
+  }
+
+  return !["0", "false", "no", "off"].includes(String(value).trim().toLowerCase());
+}
+
+function isNewCrmIntegrationEnabled() {
+  return isEnvEnabled("NEW_CRM_INTEGRATION_ENABLED", false);
+}
+
+function requireNewCrmIntegration(req, res, next) {
+  if (!isNewCrmIntegrationEnabled()) {
+    return res.status(503).json({ error: "New CRM integration is disabled" });
+  }
+
+  next();
+}
+
 function requirePayoutApiKey(req, res, next) {
   if (!process.env.PAYOUT_API_KEY) {
     return res.status(503).json({ error: "Payout API key is not configured" });
@@ -260,6 +282,13 @@ async function ensureDepositsTable() {
       payment_details JSONB,
       psp_response JSONB,
       manual_deposit_response JSONB,
+      external_source TEXT,
+      external_transaction_id TEXT,
+      external_request JSONB,
+      external_callback_status TEXT,
+      external_callback_sent_at TIMESTAMPTZ,
+      external_callback_response JSONB,
+      external_callback_error TEXT,
       error_message TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -275,6 +304,13 @@ async function ensureDepositsTable() {
     ADD COLUMN IF NOT EXISTS payment_details JSONB,
     ADD COLUMN IF NOT EXISTS psp_response JSONB,
     ADD COLUMN IF NOT EXISTS manual_deposit_response JSONB,
+    ADD COLUMN IF NOT EXISTS external_source TEXT,
+    ADD COLUMN IF NOT EXISTS external_transaction_id TEXT,
+    ADD COLUMN IF NOT EXISTS external_request JSONB,
+    ADD COLUMN IF NOT EXISTS external_callback_status TEXT,
+    ADD COLUMN IF NOT EXISTS external_callback_sent_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS external_callback_response JSONB,
+    ADD COLUMN IF NOT EXISTS external_callback_error TEXT,
     ADD COLUMN IF NOT EXISTS error_message TEXT,
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   `);
@@ -286,6 +322,8 @@ async function ensureDepositsTable() {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_deposits_utr ON deposits (utr)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_deposits_hosted_token ON deposits (hosted_token)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_deposits_psp_deposit_id ON deposits (psp_deposit_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_deposits_external_source_transaction ON deposits (external_source, external_transaction_id)`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_deposits_new_crm_transaction_unique ON deposits (external_transaction_id) WHERE external_source = 'new_crm'`);
   })().catch((err) => {
     depositsTableReadyPromise = null;
     throw err;
@@ -315,6 +353,81 @@ function getPspDepositId(pspResponse) {
       pspResponse.transactionNo ||
       pspResponse.OrderId ||
       pspResponse.orderId)
+  );
+}
+
+function normalizeNewCrmPaymentRequest(body) {
+  const transactionId = String(body.transactionId || "").trim();
+  const username = String(body.username || "").trim();
+  const email = String(body.email || "").trim().toLowerCase();
+  const mobile = String(body.mobile || "").replace(/\D/g, "");
+  const amount = Number(body.amount);
+  const errors = [];
+
+  if (!transactionId || transactionId.length > 128) {
+    errors.push("transactionId is required and must be 128 characters or less");
+  }
+
+  if (!username || username.length > 160) {
+    errors.push("username is required and must be 160 characters or less");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push("email must be a valid email address");
+  }
+
+  if (!/^\d{10}$/.test(mobile)) {
+    errors.push("mobile must be a 10 digit mobile number");
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    errors.push("amount must be a positive INR amount");
+  }
+
+  if (body.callbackUrl || body.callbackURL || body.webhookUrl || body.webhookURL || body.returnUrl || body.ReturnUrl) {
+    errors.push("callback and return URLs are not accepted in payment requests");
+  }
+
+  return {
+    errors,
+    request: {
+      transactionId,
+      username,
+      email,
+      mobile,
+      amount: Number.isFinite(amount) ? amount : null,
+    },
+    amountPaisa: Number.isFinite(amount) ? Math.round(amount * 100) : null,
+  };
+}
+
+function getStoredExternalRequest(row) {
+  if (!row || !row.external_request) {
+    return null;
+  }
+
+  if (typeof row.external_request === "string") {
+    try {
+      return JSON.parse(row.external_request);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  return row.external_request;
+}
+
+function isSameNewCrmPaymentRequest(row, request, amountPaisa) {
+  const stored = getStoredExternalRequest(row);
+
+  return Boolean(
+    stored &&
+      stored.transactionId === request.transactionId &&
+      stored.username === request.username &&
+      stored.email === request.email &&
+      stored.mobile === request.mobile &&
+      Number(stored.amount) === Number(request.amount) &&
+      Number(row.amount_paisa) === Number(amountPaisa)
   );
 }
 
@@ -532,6 +645,73 @@ function normalizeManualDepositStatus(payload) {
   return "UTR_SUBMITTED";
 }
 
+function getPspStatusPayload(payload) {
+  return payload && (payload.Result || payload.result || payload.Status || payload.status || payload);
+}
+
+function normalizePspPaymentStatus(payload) {
+  const data = getPspStatusPayload(payload) || {};
+  const statusCode = data.StatusCode ?? data.statusCode ?? data.code;
+  const isSuccess = data.IsSuccess ?? data.isSuccess;
+
+  if ((statusCode === 1 || statusCode === "1") && isSuccess === true) {
+    return "completed";
+  }
+
+  const rawStatus = String(
+    data.Status ||
+      data.status ||
+      data.TransactionStatus ||
+      data.transactionStatus ||
+      data.returnMessage ||
+      data.ReturnMessage ||
+      data.message ||
+      data.Message ||
+      ""
+  ).toLowerCase();
+
+  if (rawStatus.includes("expire")) {
+    return "expired";
+  }
+
+  if (rawStatus.includes("cancel")) {
+    return "cancelled";
+  }
+
+  if (
+    isSuccess === false ||
+    rawStatus.includes("fail") ||
+    rawStatus.includes("reject") ||
+    rawStatus.includes("declin")
+  ) {
+    return "failed";
+  }
+
+  if (
+    rawStatus.includes("success") ||
+    rawStatus.includes("complete") ||
+    rawStatus.includes("approved")
+  ) {
+    return "completed";
+  }
+
+  return "pending";
+}
+
+function getDepositStatusFromNormalizedStatus(status) {
+  return {
+    pending: "PENDING",
+    completed: "COMPLETED",
+    failed: "FAILED",
+    cancelled: "CANCELLED",
+    expired: "EXPIRED",
+  }[status] || "PENDING";
+}
+
+function isTerminalNewCrmStatus(status) {
+  return ["completed", "failed", "cancelled", "expired"].includes(status);
+}
+
 function getDepositInrPerUsd() {
   const rate = Number(process.env.DEPOSIT_INR_PER_USD || process.env.INR_PER_USD || 95.6);
   return Number.isFinite(rate) && rate > 0 ? rate : 95.6;
@@ -577,6 +757,132 @@ router.get("/deposit/config", (req, res) => {
   res.json({
     inrPerUsd: getDepositInrPerUsd(),
   });
+});
+
+router.post("/new-crm/payment", requireAdmin, requireNewCrmIntegration, async (req, res) => {
+  const { errors, request, amountPaisa } = normalizeNewCrmPaymentRequest(req.body || {});
+
+  if (errors.length) {
+    return res.status(400).json({
+      error: "Invalid payment request",
+      details: errors,
+    });
+  }
+
+  await ensureDepositsTable();
+
+  const client = await pool.connect();
+  const depositId = randomUUID();
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1)::bigint)", [
+      request.transactionId,
+    ]);
+
+    const existingResult = await client.query(
+      `SELECT *
+       FROM deposits
+       WHERE external_source=$1 AND external_transaction_id=$2
+       FOR UPDATE`,
+      ["new_crm", request.transactionId]
+    );
+
+    if (existingResult.rows.length) {
+      const existing = existingResult.rows[0];
+
+      if (!isSameNewCrmPaymentRequest(existing, request, amountPaisa)) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          error: "transactionId already exists with different payment details",
+        });
+      }
+
+      if (!existing.hosted_url) {
+        await client.query("ROLLBACK");
+        return res.status(502).json({
+          error: "Stored PSP payment link is not available for this transaction",
+        });
+      }
+
+      await client.query("COMMIT");
+      return res.json({ paymentUrl: existing.hosted_url });
+    }
+
+    await client.query(
+      `INSERT INTO deposits
+       (id, username, client_code, email, mobile, amount_inr, amount_paisa, status,
+        external_source, external_transaction_id, external_request)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [
+        depositId,
+        request.username,
+        "new_crm",
+        request.email,
+        request.mobile,
+        request.amount,
+        amountPaisa,
+        "CREATED",
+        "new_crm",
+        request.transactionId,
+        request,
+      ]
+    );
+
+    let pspResponse;
+
+    try {
+      pspResponse = await createPayin({
+        depositId,
+        paisa: amountPaisa,
+        username: request.username,
+        clientCode: "new_crm",
+        email: request.email,
+        mobile: request.mobile,
+      });
+    } catch (error) {
+      await client.query(
+        `UPDATE deposits
+         SET status=$1, error_message=$2, updated_at=NOW()
+         WHERE id=$3`,
+        ["REQUEST_FAILED", error.message, depositId]
+      );
+      await client.query("COMMIT");
+      return res.status(502).json({ error: "Unable to create PSP payment" });
+    }
+
+    const redirectUrl = getPayinRedirectUrl(pspResponse);
+    const hostedToken = extractHostedToken(redirectUrl);
+    const pspDepositId = getPspDepositId(pspResponse);
+
+    if (!redirectUrl) {
+      await client.query(
+        `UPDATE deposits
+         SET status=$1, psp_response=$2, error_message=$3, updated_at=NOW()
+         WHERE id=$4`,
+        ["REQUEST_FAILED", pspResponse, "PSP did not return a hosted payment URL", depositId]
+      );
+      await client.query("COMMIT");
+      return res.status(502).json({ error: "PSP did not return paymentUrl" });
+    }
+
+    await client.query(
+      `UPDATE deposits
+       SET status=$1, hosted_url=$2, hosted_token=$3, psp_deposit_id=$4,
+           psp_response=$5, error_message=NULL, updated_at=NOW()
+       WHERE id=$6`,
+      ["INITIATED", redirectUrl, hostedToken, pspDepositId, pspResponse, depositId]
+    );
+
+    await client.query("COMMIT");
+    return res.json({ paymentUrl: redirectUrl });
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error(err);
+    return res.status(500).json({ error: "New CRM payment failed" });
+  } finally {
+    client.release();
+  }
 });
 
 router.post("/deposit", async (req, res) => {
@@ -827,6 +1133,34 @@ async function sendToCrmProcessor({ email, transactionId, amount, utr }) {
   );
 }
 
+async function sendToNewCrm({ transactionId, status, utr }) {
+  if (!process.env.NEW_CRM_WEBHOOK_URL) {
+    throw new Error("NEW_CRM_WEBHOOK_URL is not configured");
+  }
+
+  if (!process.env.NEW_CRM_WEBHOOK_PRIVATE_KEY) {
+    throw new Error("NEW_CRM_WEBHOOK_PRIVATE_KEY is not configured");
+  }
+
+  const response = await axios.post(
+    process.env.NEW_CRM_WEBHOOK_URL,
+    {
+      transactionId,
+      status,
+      utr: utr || null,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        privatekey: process.env.NEW_CRM_WEBHOOK_PRIVATE_KEY,
+      },
+      timeout: 15000,
+    }
+  );
+
+  return response.data;
+}
+
 
 router.post("/webhook/payin", async (req, res) => {
   try {
@@ -856,7 +1190,64 @@ router.post("/webhook/payin", async (req, res) => {
     }
 
     const statusResponse = await checkStatus(TransactionId);
-    const data = statusResponse.Result;
+    const data = getPspStatusPayload(statusResponse) || {};
+    const normalizedStatus = normalizePspPaymentStatus(statusResponse);
+    const depositStatus = getDepositStatusFromNormalizedStatus(normalizedStatus);
+    const utr = data.Utr || data.utr || data.UTR || null;
+
+    if (deposit.external_source === "new_crm") {
+      await pool.query(
+        `UPDATE deposits
+         SET status=$1, utr=COALESCE($2, utr), updated_at=NOW()
+         WHERE id=$3`,
+        [depositStatus, utr, TransactionId]
+      );
+
+      if (isTerminalNewCrmStatus(normalizedStatus)) {
+        const callbackLock = await pool.query(
+          `UPDATE deposits
+           SET external_callback_status=$1, updated_at=NOW()
+           WHERE id=$2
+             AND external_source=$3
+             AND external_callback_status IS NULL
+           RETURNING external_transaction_id`,
+          ["sending", TransactionId, "new_crm"]
+        );
+
+        if (callbackLock.rows.length) {
+          try {
+            const callbackResponse = await sendToNewCrm({
+              transactionId: callbackLock.rows[0].external_transaction_id,
+              status: normalizedStatus,
+              utr,
+            });
+
+            await pool.query(
+              `UPDATE deposits
+               SET external_callback_status=$1,
+                   external_callback_sent_at=NOW(),
+                   external_callback_response=$2,
+                   external_callback_error=NULL,
+                   updated_at=NOW()
+               WHERE id=$3`,
+              ["sent", callbackResponse || {}, TransactionId]
+            );
+          } catch (callbackError) {
+            await pool.query(
+              `UPDATE deposits
+               SET external_callback_status=$1,
+                   external_callback_error=$2,
+                   updated_at=NOW()
+               WHERE id=$3`,
+              ["failed", callbackError.message, TransactionId]
+            );
+            throw callbackError;
+          }
+        }
+      }
+
+      return res.json({ returnMessage: "Processed", code: 0 });
+    }
 
     if (data.StatusCode === 1 && data.IsSuccess) {
       await pool.query(
@@ -1440,6 +1831,12 @@ router.post("/webhook/payout", async (req, res) => {
   }
 });
 
+router._test = {
+  getDepositStatusFromNormalizedStatus,
+  isSameNewCrmPaymentRequest,
+  isTerminalNewCrmStatus,
+  normalizeNewCrmPaymentRequest,
+  normalizePspPaymentStatus,
+};
+
 module.exports = router;
-
-

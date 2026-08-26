@@ -21,6 +21,24 @@ function setIframeHeaders(req, res, next) {
   next();
 }
 
+function isEnvEnabled(name, fallback) {
+  const value = process.env[name];
+
+  if (typeof value === "undefined" || value === "") {
+    return fallback;
+  }
+
+  return !["0", "false", "no", "off"].includes(String(value).trim().toLowerCase());
+}
+
+function requireDefaultPaymentPage(req, res, next) {
+  if (!isEnvEnabled("DEFAULT_PAYMENT_PAGE_ENABLED", true)) {
+    return res.status(404).send("Payment page disabled");
+  }
+
+  next();
+}
+
 function denyFrameHeaders(req, res, next) {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
@@ -30,28 +48,28 @@ function denyFrameHeaders(req, res, next) {
 app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || "1mb" }));
-app.use(["/deposit.html", "/jay-deposit.html"], setIframeHeaders);
+app.use(["/deposit.html", "/jay-deposit.html"], requireDefaultPaymentPage, setIframeHeaders);
 app.use("/admin.html", denyFrameHeaders);
 app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/webhook/payout", paymentRoutes);
 app.use("/api", paymentRoutes);
 
-app.get("/deposit", (req, res) => {
+app.get("/deposit", requireDefaultPaymentPage, (req, res) => {
   setIframeHeaders(req, res, () => {});
   res.sendFile(path.join(__dirname, "public", "deposit.html"));
 });
 
-app.get("/jay/deposit", (req, res) => {
+app.get("/jay/deposit", requireDefaultPaymentPage, (req, res) => {
   setIframeHeaders(req, res, () => {});
   res.sendFile(path.join(__dirname, "public", "jay-deposit.html"));
 });
 
-app.get("/b2core/deposit", setIframeHeaders, (req, res) => {
+app.get("/b2core/deposit", requireDefaultPaymentPage, setIframeHeaders, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "deposit.html"));
 });
 
-app.get("/b2core/jay/deposit", setIframeHeaders, (req, res) => {
+app.get("/b2core/jay/deposit", requireDefaultPaymentPage, setIframeHeaders, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "jay-deposit.html"));
 });
 
