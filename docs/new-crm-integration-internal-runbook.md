@@ -52,6 +52,7 @@ Do not change production env values until the integration is approved for produc
 - `ADMIN_PANEL_KEY`: authenticates incoming new CRM requests.
 - `PSP_URL`: PSP base URL.
 - `PSP_PRIVATE_KEY`: PSP payin request and PSP payin webhook key.
+- `PSP_CLIENT_CODE`: PSP payin client code. Defaults to `fort` when unset.
 - `RETURN_URL`: still used by existing PSP integration and legacy payment flows.
 - `DATABASE_URL`: Postgres connection.
 - `CRM_PROCESSOR_WEBHOOK_URL`: legacy CRM callback URL.
@@ -268,4 +269,3 @@ NEW_CRM_INTEGRATION_ENABLED=false
 ```
 
 Restart the Node process. This disables only the new CRM API.
-

@@ -4,6 +4,10 @@ function getPspBaseUrl() {
   return (process.env.PSP_URL || "https://lobby.dxbpay.me").replace(/\/+$/, "");
 }
 
+function getPayinClientCode(clientCode) {
+  return process.env.PSP_CLIENT_CODE || clientCode || "fort";
+}
+
 function extractHostedToken(url) {
   if (!url) {
     return null;
@@ -159,7 +163,7 @@ exports.createPayin = async ({
         Amount: paisa,
         TransactionId: depositId,
         ClientUsername: username,
-        ClientCode: "fort",
+        ClientCode: getPayinClientCode(clientCode),
         Description: "",
         Email: email,
         MobileNo: mobile,
