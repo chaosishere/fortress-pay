@@ -759,10 +759,57 @@ router.get("/deposit/config", (req, res) => {
   });
 });
 
+router.get("/new-crm/diagnostics", requireAdmin, async (req, res) => {
+  const diagnostics = {
+    newCrmIntegrationEnabled: isNewCrmIntegrationEnabled(),
+    hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+    hasPspUrl: Boolean(process.env.PSP_URL),
+    hasPspPrivateKey: Boolean(process.env.PSP_PRIVATE_KEY),
+    pspClientCode: process.env.PSP_CLIENT_CODE || null,
+    hasNewCrmWebhookUrl: Boolean(process.env.NEW_CRM_WEBHOOK_URL),
+    hasNewCrmWebhookPrivateKey: Boolean(process.env.NEW_CRM_WEBHOOK_PRIVATE_KEY),
+    database: {
+      ok: false,
+    },
+  };
+
+  try {
+    await ensureDepositsTable();
+    const dbResult = await pool.query(
+      "SELECT current_database() AS database_name, current_user AS database_user"
+    );
+    diagnostics.database = {
+      ok: true,
+      databaseName: dbResult.rows[0].database_name,
+      databaseUser: dbResult.rows[0].database_user,
+    };
+  } catch (error) {
+    diagnostics.database = {
+      ok: false,
+      code: error.code || null,
+      message: error.message,
+      address: error.address || null,
+      port: error.port || null,
+    };
+  }
+
+  res.json(diagnostics);
+});
+
 router.post("/new-crm/payment", requireAdmin, requireNewCrmIntegration, async (req, res) => {
+  console.log("NEW_CRM_PAYMENT_REQUEST", {
+    transactionId: String((req.body && req.body.transactionId) || "").slice(0, 128),
+    hasBody: Boolean(req.body),
+  });
+
   const { errors, request, amountPaisa } = normalizeNewCrmPaymentRequest(req.body || {});
 
   if (errors.length) {
+    console.warn("NEW_CRM_PAYMENT_VALIDATION_FAILED", {
+      transactionId: request.transactionId || null,
+      errors,
+    });
+
     return res.status(400).json({
       error: "Invalid payment request",
       details: errors,
@@ -878,7 +925,7 @@ router.post("/new-crm/payment", requireAdmin, requireNewCrmIntegration, async (r
     return res.json({ paymentUrl: redirectUrl });
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
-    console.error(err);
+    console.error("NEW_CRM_PAYMENT_ERROR:", err);
     return res.status(500).json({ error: "New CRM payment failed" });
   } finally {
     client.release();
