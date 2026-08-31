@@ -16,7 +16,7 @@ Headers:
 
 ```http
 Content-Type: application/json
-x-admin-key: SHARED_ADMIN_PANEL_KEY
+privatekey: SHARED_ADMIN_PANEL_KEY
 ```
 
 Request body:
@@ -121,7 +121,7 @@ Headers:
 
 ```http
 Content-Type: application/json
-x-admin-key: {{adminKey}}
+privatekey: {{adminKey}}
 ```
 
 Body:

@@ -23,7 +23,7 @@ function requireAdmin(req, res, next) {
     return res.status(503).json({ error: "Admin panel key is not configured" });
   }
 
-  const adminKey = req.headers["x-admin-key"];
+  const adminKey = req.headers.privatekey || req.headers["x-admin-key"];
 
   if (adminKey !== process.env.ADMIN_PANEL_KEY) {
     return res.status(401).json({ error: "Invalid admin key" });

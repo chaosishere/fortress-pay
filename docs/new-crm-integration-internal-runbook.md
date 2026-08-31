@@ -20,7 +20,7 @@ POST /api/new-crm/payment
 Authentication uses the existing admin key:
 
 ```http
-x-admin-key: ADMIN_PANEL_KEY
+privatekey: ADMIN_PANEL_KEY
 ```
 
 The endpoint is disabled by default and only works when:
@@ -228,7 +228,7 @@ Create payment:
 
 ```http
 POST https://pay.fortressfx.com/api/new-crm/payment
-x-admin-key: ADMIN_PANEL_KEY
+privatekey: ADMIN_PANEL_KEY
 Content-Type: application/json
 ```
 

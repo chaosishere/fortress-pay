@@ -15,7 +15,7 @@ NEW_CRM_INTEGRATION_ENABLED=true
 Authenticate the request with the existing admin key:
 
 ```http
-x-admin-key: ADMIN_PANEL_KEY_VALUE
+privatekey: ADMIN_PANEL_KEY_VALUE
 Content-Type: application/json
 ```
 
@@ -144,7 +144,7 @@ adminKey=YOUR_ADMIN_PANEL_KEY
 3. Add headers:
 
 ```http
-x-admin-key: {{adminKey}}
+privatekey: {{adminKey}}
 Content-Type: application/json
 ```
 
